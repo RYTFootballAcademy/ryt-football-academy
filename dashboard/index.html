@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RYT Football Academy Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #1e293b;
+            padding: 20px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+        .card {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 6px;
+            border: none;
+        }
+        button {
+            background: #22c55e;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #16a34a;
+        }
+        pre {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    RYT Football Academy Dashboard
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h3>AI Chat</h3>
+        <input id="chatInput" placeholder="Type request (e.g. need sponsors)" />
+        <button onclick="sendChat()">Send</button>
+        <pre id="chatOutput"></pre>
+    </div>
+
+    <div class="card">
+        <h3>Add Sponsor Lead</h3>
+        <input id="sponsorName" placeholder="Sponsor Name" />
+        <input id="sponsorIndustry" placeholder="Industry" />
+        <button onclick="addSponsor()">Add Sponsor</button>
+        <pre id="sponsorOutput"></pre>
+    </div>
+
+    <div class="card">
+        <h3>NPO Compliance</h3>
+        <button onclick="checkCompliance()">Check Status</button>
+        <pre id="npoOutput"></pre>
+    </div>
+
+    <div class="card">
+        <h3>WhatsApp Send</h3>
+        <input id="waNumber" placeholder="Recipient" />
+        <input id="waMessage" placeholder="Message" />
+        <button onclick="sendWhatsApp()">Send</button>
+        <pre id="waOutput"></pre>
+    </div>
+
+</div>
+
+<script>
+const API = "http://localhost:8000";
+
+async function sendChat() {
+    const message = document.getElementById("chatInput").value;
+    const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message})
+    });
+    document.getElementById("chatOutput").textContent = JSON.stringify(await res.json(), null, 2);
+}
+
+async function addSponsor() {
+    const name = document.getElementById("sponsorName").value;
+    const industry = document.getElementById("sponsorIndustry").value;
+    const res = await fetch(`${API}/sponsors/add`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({name, industry})
+    });
+    document.getElementById("sponsorOutput").textContent = JSON.stringify(await res.json(), null, 2);
+}
+
+async function checkCompliance() {
+    const res = await fetch(`${API}/npo/compliance`);
+    document.getElementById("npoOutput").textContent = JSON.stringify(await res.json(), null, 2);
+}
+
+async function sendWhatsApp() {
+    const recipient = document.getElementById("waNumber").value;
+    const message = document.getElementById("waMessage").value;
+    const res = await fetch(`${API}/whatsapp/send`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({recipient, message})
+    });
+    document.getElementById("waOutput").textContent = JSON.stringify(await res.json(), null, 2);
+}
+</script>
+
+</body>
+</html>
