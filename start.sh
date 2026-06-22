@@ -1,1 +1,1 @@
-uvicorn api.server:app --host 0.0.0.0 --port 10000
+uvicorn AI-Agent.api.server:app --host 0.0.0.0 --port 10000
