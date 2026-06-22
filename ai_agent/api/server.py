@@ -15,10 +15,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 # Import modules (local package structure)
-from core.agent import RYTAI_Agent, Task
-from modules.npo_manager import NPOManager
-from modules.sponsor_engine import SponsorEngine
-from modules.whatsapp_hub import WhatsAppHub
+from ai_agent.core.agent import RYTAI_Agent, Task
+from ai_agent.modules.npo_manager import NPOManager
+from ai_agent.modules.sponsor_engine import SponsorEngine
+from ai_agent.modules.whatsapp_hub import WhatsAppHub
 
 
 app = FastAPI(title="RYT Football Academy AI System", version="1.0")
