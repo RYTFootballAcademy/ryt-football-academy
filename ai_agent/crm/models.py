@@ -100,3 +100,11 @@ class Attendance(Base):
     date = Column(String)       # ISO string
     status = Column(String)     # Present, Absent, Late
 
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("players.id"))   # or staff/parent later
+    receiver_id = Column(Integer, ForeignKey("players.id"))
+    content = Column(String)
+    timestamp = Column(String)   # ISO string

@@ -256,3 +256,25 @@ def create_attendance(
     db.commit()
     db.refresh(attendance)
     return attendance
+
+from ai_agent.crm.models import Message
+
+@app.post("/crm/message")
+def create_message(
+    sender_id: int,
+    receiver_id: int,
+    content: str,
+    timestamp: str,
+    db: Session = Depends(get_db)
+):
+    message = Message(
+        sender_id=sender_id,
+        receiver_id=receiver_id,
+        content=content,
+        timestamp=timestamp
+    )
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    return message
+
