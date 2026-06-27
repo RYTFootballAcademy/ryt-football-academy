@@ -210,4 +210,19 @@ def create_tournament(
     db.refresh(tournament)
     return tournament
 
+from ai_agent.crm.models import Fee
+
+@app.post("/crm/fee")
+def create_fee(
+    player_id: int,
+    amount: int,
+    due_date: str,
+    status: str,
+    db: Session = Depends(get_db)
+):
+    fee = Fee(player_id=player_id, amount=amount, due_date=due_date, status=status)
+    db.add(fee)
+    db.commit()
+    db.refresh(fee)
+    return fee
 

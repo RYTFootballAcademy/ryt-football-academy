@@ -74,6 +74,14 @@ class Tournament(Base):
     start_date = Column(String)   # ISO string
     end_date = Column(String)
 
+class Fee(Base):
+    __tablename__ = "fees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"))
+    amount = Column(Integer)
+    due_date = Column(String)   # ISO string
+    status = Column(String)     # Pending, Paid, Overdue
 
 
 
