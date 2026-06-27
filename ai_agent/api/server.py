@@ -292,3 +292,19 @@ def create_product(
     db.commit()
     db.refresh(product)
     return product
+
+from ai_agent.crm.models import Camp
+
+@app.post("/crm/camp")
+def create_camp(
+    name: str,
+    location: str,
+    start_date: str,
+    end_date: str,
+    db: Session = Depends(get_db)
+):
+    camp = Camp(name=name, location=location, start_date=start_date, end_date=end_date)
+    db.add(camp)
+    db.commit()
+    db.refresh(camp)
+    return camp

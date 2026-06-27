@@ -116,3 +116,12 @@ class Product(Base):
     name = Column(String, index=True)
     price = Column(Integer)
     stock = Column(Integer)
+
+class Camp(Base):
+    __tablename__ = "camps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    location = Column(String)
+    start_date = Column(String)   # ISO string
+    end_date = Column(String)
