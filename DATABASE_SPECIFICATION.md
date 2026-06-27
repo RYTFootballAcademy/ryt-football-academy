@@ -520,3 +520,115 @@ Parent → Players → Attendance, Fees, Trials, Evaluations, Messages, Reports
 | version    | TEXT       | Version number               |
 | date       | DATE       | Adoption date                |
 | content    | TEXT       | Constitution text            |
+
+## Sprint 6 – Commercial
+
+### 41. Products
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| name       | TEXT       | Product name                 |
+| category_id| INTEGER FK | Linked to Categories         |
+| price      | INTEGER    | Unit price                   |
+| stock      | INTEGER    | Quantity available           |
+| status     | TEXT       | Active / Discontinued        |
+
+---
+
+### 42. Categories
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| name       | TEXT       | Category name                |
+| description| TEXT       | Optional                     |
+
+---
+
+### 43. Orders
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| customer_id| INTEGER FK | Linked to Customers          |
+| date       | DATE       | Order date                   |
+| status     | TEXT       | Pending / Completed / Cancelled |
+| total      | INTEGER    | Order total                  |
+
+---
+
+### 44. Order Items
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| order_id   | INTEGER FK | Linked to Orders             |
+| product_id | INTEGER FK | Linked to Products           |
+| quantity   | INTEGER    | Ordered quantity             |
+| price      | INTEGER    | Unit price                   |
+
+---
+
+### 45. Customers
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| first_name | TEXT       |                              |
+| last_name  | TEXT       |                              |
+| email      | TEXT       |                              |
+| phone      | TEXT       |                              |
+| address    | TEXT       |                              |
+
+---
+
+### 46. Payments
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| order_id   | INTEGER FK | Linked to Orders             |
+| amount     | INTEGER    | Payment amount               |
+| date       | DATE       | Payment date                 |
+| method     | TEXT       | Cash / EFT / Card            |
+| reference  | TEXT       | Transaction reference        |
+
+---
+
+### 47. Camps
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| name       | TEXT       | Camp name                    |
+| location   | TEXT       | Camp venue                   |
+| start_date | DATE       | Start date                   |
+| end_date   | DATE       | End date                     |
+
+---
+
+### 48. Registrations
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| camp_id    | INTEGER FK | Linked to Camps              |
+| player_id  | INTEGER FK | Linked to Players            |
+| date       | DATE       | Registration date            |
+| status     | TEXT       | Pending / Confirmed / Cancelled |
+
+---
+
+### 49. Camp Payments
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| registration_id | INTEGER FK | Linked to Registrations |
+| amount     | INTEGER    | Payment amount               |
+| date       | DATE       | Payment date                 |
+| method     | TEXT       | Cash / EFT / Card            |
+
+---
+
+### 50. Camp Attendance
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| camp_id    | INTEGER FK | Linked to Camps              |
+| player_id  | INTEGER FK | Linked to Players            |
+| date       | DATE       | Attendance date              |
+| status     | TEXT       | Present / Absent             |
