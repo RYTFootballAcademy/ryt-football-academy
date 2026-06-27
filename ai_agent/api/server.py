@@ -166,4 +166,28 @@ def create_compliance(
     db.refresh(task)
     return task
 
+from ai_agent.crm.models import Proposal
+
+@app.post("/crm/proposal")
+def create_proposal(
+    title: str,
+    content: str,
+    sponsor_id: int,
+    funding_id: int,
+    status: str,
+    db: Session = Depends(get_db)
+):
+    proposal = Proposal(
+        title=title,
+        content=content,
+        sponsor_id=sponsor_id,
+        funding_id=funding_id,
+        status=status
+    )
+    db.add(proposal)
+    db.commit()
+    db.refresh(proposal)
+    return proposal
+
+
 

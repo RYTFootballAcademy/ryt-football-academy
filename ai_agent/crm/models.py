@@ -55,6 +55,17 @@ class ComplianceTask(Base):
     due_date = Column(String)   # store as ISO string
     status = Column(String)     # Pending, Completed, Overdue
 
+class Proposal(Base):
+    __tablename__ = "proposals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    content = Column(String)
+    sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
+    funding_id = Column(Integer, ForeignKey("funding_opportunities.id"))
+    status = Column(String)   # Draft, Submitted, Approved, Rejected
+
+
 
 
 
