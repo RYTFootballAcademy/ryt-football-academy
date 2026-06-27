@@ -300,3 +300,128 @@ Parent → Players → Attendance, Fees, Trials, Evaluations, Messages, Reports
 | account_number | TEXT   | Account number               |
 | account_type | TEXT     | Savings / Current            |
 | status     | TEXT       | Active / Closed              |
+
+## Sprint 4 – Sponsorship & Funding
+
+### 22. Sponsors
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| name       | TEXT       | Sponsor name                 |
+| industry   | TEXT       | Sector                       |
+| email      | TEXT       | Contact email                |
+| phone      | TEXT       | Contact phone                |
+| website    | TEXT       | Sponsor website              |
+| status     | TEXT       | Active / Inactive            |
+
+---
+
+### 23. Sponsor Contacts
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| sponsor_id | INTEGER FK | Linked to Sponsors           |
+| name       | TEXT       | Contact person               |
+| role       | TEXT       | Position                     |
+| email      | TEXT       | Contact email                |
+| phone      | TEXT       | Contact phone                |
+
+---
+
+### 24. Sponsorship Packages
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| sponsor_id | INTEGER FK | Linked to Sponsors           |
+| name       | TEXT       | Package name                 |
+| description| TEXT       | Package details              |
+| value      | INTEGER    | Monetary value               |
+
+---
+
+### 25. Sponsorship Agreements
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| sponsor_id | INTEGER FK | Linked to Sponsors           |
+| package_id | INTEGER FK | Linked to Sponsorship Packages |
+| start_date | DATE       | Agreement start              |
+| end_date   | DATE       | Agreement end                |
+| status     | TEXT       | Active / Expired             |
+
+---
+
+### 26. Meetings
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| sponsor_id | INTEGER FK | Linked to Sponsors           |
+| date       | DATE       | Meeting date                 |
+| notes      | TEXT       | Meeting notes                |
+
+---
+
+### 27. Proposal Documents
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| sponsor_id | INTEGER FK | Linked to Sponsors           |
+| title      | TEXT       | Proposal title               |
+| content    | TEXT       | Proposal content             |
+| status     | TEXT       | Draft / Submitted / Approved / Rejected |
+
+---
+
+### 28. Follow-ups
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| proposal_id| INTEGER FK | Linked to Proposal Documents |
+| date       | DATE       | Follow-up date               |
+| notes      | TEXT       | Follow-up notes              |
+
+---
+
+### 29. Funding Opportunities
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| name       | TEXT       | Funding opportunity name     |
+| description| TEXT       | Details                      |
+| deadline   | DATE       | Application deadline         |
+| status     | TEXT       | Open / Closed                |
+
+---
+
+### 30. Grant Applications
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| funding_id | INTEGER FK | Linked to Funding Opportunities |
+| player_id  | INTEGER FK | Linked to Players (if applicable) |
+| date       | DATE       | Application date             |
+| status     | TEXT       | Submitted / Approved / Rejected |
+| notes      | TEXT       | Application notes            |
+
+---
+
+### 31. Supporting Documents
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| application_id | INTEGER FK | Linked to Grant Applications |
+| file_path  | TEXT       | Document location            |
+| description| TEXT       | Notes                        |
+
+---
+
+### 32. Outcomes
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| application_id | INTEGER FK | Linked to Grant Applications |
+| decision   | TEXT       | Approved / Rejected          |
+| date       | DATE       | Decision date                |
+| notes      | TEXT       | Outcome notes                |
