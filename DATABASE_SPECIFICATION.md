@@ -108,3 +108,115 @@ One Parent → Many Players
 
 **Relationships:**  
 Parent → Players → Attendance, Fees, Trials, Evaluations, Messages, Reports
+
+## Sprint 2 – Football Operations
+
+### 6. Attendance
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| player_id  | INTEGER FK | Linked to Players            |
+| date       | DATE       | Training/match date          |
+| status     | TEXT       | Present / Absent / Late      |
+
+---
+
+### 7. Training Sessions
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| team_id       | INTEGER FK | Linked to Teams              |
+| coach_id      | INTEGER FK | Linked to Coaches            |
+| date          | DATE       | Session date                 |
+| time          | TEXT       | Session time                 |
+| venue         | TEXT       | Training ground              |
+| focus_area    | TEXT       | e.g. Passing, Fitness        |
+| notes         | TEXT       | Session notes                |
+
+---
+
+### 8. Matches
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| team_id       | INTEGER FK | Linked to Teams              |
+| opponent      | TEXT       | Opponent team name           |
+| date          | DATE       | Match date                   |
+| venue         | TEXT       | Stadium/field                |
+| competition   | TEXT       | League / Cup / Friendly      |
+| result        | TEXT       | Win / Loss / Draw            |
+
+---
+
+### 9. Match Events
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| match_id      | INTEGER FK | Linked to Matches            |
+| player_id     | INTEGER FK | Linked to Players            |
+| event_type    | TEXT       | Goal, Assist, Card, Substitution |
+| minute        | INTEGER    | Minute of event              |
+| notes         | TEXT       | Extra details                |
+
+---
+
+### 10. Player Statistics
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| player_id     | INTEGER FK | Linked to Players            |
+| season        | TEXT       | Season identifier            |
+| matches_played| INTEGER    |                              |
+| goals         | INTEGER    |                              |
+| assists       | INTEGER    |                              |
+| yellow_cards  | INTEGER    |                              |
+| red_cards     | INTEGER    |                              |
+| minutes_played| INTEGER    |                              |
+
+---
+
+### 11. Development Reports
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| player_id     | INTEGER FK | Linked to Players            |
+| coach_id      | INTEGER FK | Linked to Coaches            |
+| date          | DATE       | Report date                  |
+| strengths     | TEXT       | Player strengths             |
+| weaknesses    | TEXT       | Areas to improve             |
+| recommendations| TEXT      | Next steps                   |
+
+---
+
+### 12. Trials
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| player_id     | INTEGER FK | Linked to Players            |
+| date          | DATE       | Trial date                   |
+| result        | TEXT       | Passed / Failed              |
+| notes         | TEXT       | Trial notes                  |
+
+---
+
+### 13. Injuries
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| player_id     | INTEGER FK | Linked to Players            |
+| injury_type   | TEXT       | e.g. Hamstring, Ankle        |
+| date          | DATE       | Injury date                  |
+| recovery_date | DATE       | Expected recovery            |
+| status        | TEXT       | Active / Recovered           |
+
+---
+
+### 14. Fitness Tests
+| Column        | Type       | Notes                        |
+|---------------|------------|------------------------------|
+| id            | INTEGER PK | Primary key                  |
+| player_id     | INTEGER FK | Linked to Players            |
+| date          | DATE       | Test date                    |
+| test_type     | TEXT       | e.g. Sprint, Endurance       |
+| result        | TEXT       | Recorded result              |
+| notes         | TEXT       | Extra details                |
