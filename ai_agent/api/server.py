@@ -189,5 +189,25 @@ def create_proposal(
     db.refresh(proposal)
     return proposal
 
+from ai_agent.crm.models import Tournament
+
+@app.post("/crm/tournament")
+def create_tournament(
+    name: str,
+    location: str,
+    start_date: str,
+    end_date: str,
+    db: Session = Depends(get_db)
+):
+    tournament = Tournament(
+        name=name,
+        location=location,
+        start_date=start_date,
+        end_date=end_date
+    )
+    db.add(tournament)
+    db.commit()
+    db.refresh(tournament)
+    return tournament
 
 

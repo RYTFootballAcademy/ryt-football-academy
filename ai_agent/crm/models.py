@@ -65,6 +65,14 @@ class Proposal(Base):
     funding_id = Column(Integer, ForeignKey("funding_opportunities.id"))
     status = Column(String)   # Draft, Submitted, Approved, Rejected
 
+class Tournament(Base):
+    __tablename__ = "tournaments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    location = Column(String)
+    start_date = Column(String)   # ISO string
+    end_date = Column(String)
 
 
 
