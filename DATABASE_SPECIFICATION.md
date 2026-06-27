@@ -632,3 +632,52 @@ Parent → Players → Attendance, Fees, Trials, Evaluations, Messages, Reports
 | player_id  | INTEGER FK | Linked to Players            |
 | date       | DATE       | Attendance date              |
 | status     | TEXT       | Present / Absent             |
+## Phase H - AI Layer 
+### AI Conversations 
+- id INTEGER PK 
+- player_id INTEGER FK (Players.id) 
+- sponsor_id INTEGER FK (Sponsors.id) 
+- conversation_date DATE 
+- input_text TEXT 
+- output_text TEXT 
+- context TEXT 
+- status TEXT 
+### Generated Proposals 
+- id INTEGER PK 
+- sponsor_id INTEGER FK 
+- proposal_date DATE 
+- title TEXT 
+- content TEXT 
+- generated_by TEXT 
+- status TEXT 
+### Generated Reports 
+- id INTEGER PK 
+- player_id INTEGER FK 
+- report_date DATE 
+- report_type TEXT 
+- content TEXT 
+- generated_by TEXT 
+- status TEXT 
+### Sponsor Recommendations 
+- id INTEGER PK 
+- sponsor_id INTEGER FK 
+- recommendation_date DATE 
+- recommendation_type TEXT 
+- details TEXT 
+- confidence_score REAL 
+- status TEXT 
+### Funding Recommendations 
+- id INTEGER PK 
+- funding_opportunity_id INTEGER FK 
+- recommendation_date DATE 
+- details TEXT 
+- confidence_score REAL 
+- status TEXT 
+### Player Insights 
+- id INTEGER PK 
+- player_id INTEGER FK 
+- insight_date DATE 
+- insight_type TEXT 
+- details TEXT 
+- confidence_score REAL 
+- status TEXT 
