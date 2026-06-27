@@ -1,128 +1,148 @@
-"""
-RYT Football Academy - FastAPI Backend
---------------------------------------
-This is the central API layer connecting all AI modules:
-- Core Agent
-- NPO Manager
-- Sponsor Engine
-- WhatsApp Hub
+from typing import List
+from fastapi import FastAPI, Depends
+from ai_agent.crm.api import router as crm_router
+from fastapi import APIRouter
+from ai_agent.modules.sponsor_manager import SponsorManager, Sponsor
 
-This turns the system into a runnable backend service.
-"""
+from sqlalchemy.orm import Session
+from ai_agent.modules.database import SessionLocal
 
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Optional, List
-
-# Import modules (local package structure)
-from ai_agent.core.agent import RYTAI_Agent, Task
-from ai_agent.modules.npo_manager import NPOManager
-from ai_agent.modules.sponsor_engine import SponsorEngine
-from ai_agent.modules.whatsapp_hub import WhatsAppHub
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 app = FastAPI(title="RYT Football Academy AI System", version="1.0")
 
-# Initialize systems
-agent = RYTAI_Agent()
-npo = NPOManager()
-sponsors = SponsorEngine()
-whatsapp = WhatsAppHub()
+# Include CRM routes
+app.include_router(crm_router)
 
+# Example sponsor routes
+router = APIRouter()
+sponsor_manager = SponsorManager()
 
-# ---------------- REQUEST MODELS ----------------
+@router.post("/sponsor/add")
+def add_sponsor(sponsor: Sponsor):
+    return sponsor_manager.add_sponsor(sponsor)
 
-class ChatRequest(BaseModel):
-    message: str
+@router.get("/sponsor/list")
+def list_sponsors():
+    return sponsor_manager.list_sponsors()
 
+@router.put("/sponsor/{sponsor_id}/status")
+def update_status(sponsor_id: int, new_status: str):
+    return sponsor_manager.update_status(sponsor_id, new_status)
 
-class SponsorLeadRequest(BaseModel):
-    name: str
-    industry: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+app.include_router(router, prefix="/sponsor")
+from ai_agent.modules.proposal_generator import ProposalGenerator
 
+proposal_generator = ProposalGenerator()
 
-class WhatsAppRequest(BaseModel):
-    recipient: str
-    message: str
+@app.post("/proposal/generate")
+def generate_proposal(sponsor_name: str, contribution_amount: float):
+    return proposal_generator.generate_proposal(sponsor_name, contribution_amount)
+from ai_agent.modules.funding_finder import FundingFinder
 
+funding_finder = FundingFinder()
 
-# ---------------- HEALTH CHECK ----------------
+@app.post("/funding/add")
+def add_opportunity(category: str, name: str, description: str, contact: str):
+    return funding_finder.add_opportunity(category, name, description, contact)
 
-@app.get("/")
-def home():
-    return {
-        "system": "RYT Football Academy AI",
-        "status": "running"
-    }
+@app.get("/funding/list")
+def list_opportunities():
+    return funding_finder.list_opportunities()
 
+@app.get("/funding/category/{category}")
+def find_by_category(category: str):
+    return funding_finder.find_by_category(category)
+from ai_agent.modules.npo_compliance import NPOComplianceTracker
 
-# ---------------- AI AGENT ROUTING ----------------
-
-@app.post("/chat")
-def chat(request: ChatRequest):
-    task = Task(user_input=request.message)
-    result = agent.route_task(task)
-    return result
-
-
-# ---------------- NPO ENDPOINTS ----------------
+npo_tracker = NPOComplianceTracker()
 
 @app.post("/npo/director/add")
-def add_director(name: str, id_number: Optional[str] = None, role: Optional[str] = None):
-    return npo.add_director(name, id_number, role)
-
+def add_director(name: str):
+    return npo_tracker.add_director(name)
 
 @app.post("/npo/member/add")
 def add_member(name: str):
-    return npo.add_member(name)
+    return npo_tracker.add_member(name)
 
+@app.post("/npo/meeting/record")
+def record_meeting(date: str, attendees: List[str]):
+    return npo_tracker.record_meeting(date, attendees)
 
-@app.get("/npo/compliance")
-def check_compliance():
-    return npo.check_compliance()
+@app.put("/npo/director/inactive")
+def mark_inactive_director(name: str):
+    return npo_tracker.mark_inactive_director(name)
 
+@app.post("/npo/task/add")
+def add_task(task: str, due_date: str):
+    return npo_tracker.add_task(task, due_date)
 
-@app.get("/npo/funding-score")
-def funding_score():
-    return npo.funding_readiness_score()
+@app.put("/npo/task/complete")
+def complete_task(task: str):
+    return npo_tracker.complete_task(task)
 
+@app.get("/npo/tasks")
+def list_tasks():
+    return npo_tracker.list_tasks()
 
-# ---------------- SPONSOR ENDPOINTS ----------------
+from ai_agent.crm.models import Coach
 
-@app.post("/sponsors/add")
-def add_sponsor(lead: SponsorLeadRequest):
-    return sponsors.add_lead(
-        name=lead.name,
-        industry=lead.industry,
-        email=lead.email,
-        phone=lead.phone
+@app.post("/crm/coach")
+def create_coach(name: str, role: str, phone: str, email: str, db: Session = Depends(get_db)):
+    coach = Coach(name=name, role=role, phone=phone, email=email)
+    db.add(coach)
+    db.commit()
+    db.refresh(coach)
+    return coach
+
+from ai_agent.crm.models import Sponsor
+
+@app.post("/crm/sponsor")
+def create_sponsor(
+    name: str,
+    industry: str,
+    contact_person: str,
+    email: str,
+    phone: str,
+    db: Session = Depends(get_db)
+):
+    sponsor = Sponsor(
+        name=name,
+        industry=industry,
+        contact_person=contact_person,
+        email=email,
+        phone=phone
     )
+    db.add(sponsor)
+    db.commit()
+    db.refresh(sponsor)
+    return sponsor
+
+from ai_agent.crm.models import FundingOpportunity
+
+@app.post("/crm/funding")
+def create_funding(
+    title: str,
+    description: str,
+    amount: int,
+    sponsor_id: int,
+    db: Session = Depends(get_db)
+):
+    funding = FundingOpportunity(
+        title=title,
+        description=description,
+        amount=amount,
+        sponsor_id=sponsor_id
+    )
+    db.add(funding)
+    db.commit()
+    db.refresh(funding)
+    return funding
 
 
-@app.get("/sponsors/pipeline")
-def sponsor_pipeline():
-    return sponsors.pipeline_summary()
-
-
-# ---------------- WHATSAPP ENDPOINTS ----------------
-
-@app.post("/whatsapp/send")
-def send_message(request: WhatsAppRequest):
-    return whatsapp.send_message(request.recipient, request.message)
-
-
-@app.post("/whatsapp/bulk")
-def send_bulk(recipients: List[str], message: str):
-    return whatsapp.send_bulk(recipients, message)
-
-
-@app.get("/whatsapp/status")
-def whatsapp_status():
-    return whatsapp.queue_status()
-
-
-# ---------------- RUN SERVER ----------------
-# To run locally:
-# uvicorn api.server:app --reload
