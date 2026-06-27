@@ -425,3 +425,98 @@ Parent → Players → Attendance, Fees, Trials, Evaluations, Messages, Reports
 | decision   | TEXT       | Approved / Rejected          |
 | date       | DATE       | Decision date                |
 | notes      | TEXT       | Outcome notes                |
+
+## Sprint 5 – Governance
+
+### 33. Directors
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| first_name | TEXT       |                              |
+| last_name  | TEXT       |                              |
+| role       | TEXT       | Chairperson / Treasurer etc. |
+| email      | TEXT       |                              |
+| phone      | TEXT       |                              |
+| status     | TEXT       | Active / Former              |
+
+---
+
+### 34. Members
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| first_name | TEXT       |                              |
+| last_name  | TEXT       |                              |
+| email      | TEXT       |                              |
+| phone      | TEXT       |                              |
+| membership_type | TEXT  | Ordinary / Honorary          |
+
+---
+
+### 35. Meetings
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| date       | DATE       | Meeting date                 |
+| type       | TEXT       | Board / AGM / Special        |
+| notes      | TEXT       | Meeting notes                |
+
+---
+
+### 36. Resolutions
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| meeting_id | INTEGER FK | Linked to Meetings           |
+| title      | TEXT       | Resolution title             |
+| content    | TEXT       | Resolution details           |
+| status     | TEXT       | Passed / Rejected            |
+
+---
+
+### 37. Policies
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| title      | TEXT       | Policy title                 |
+| content    | TEXT       | Policy content               |
+| version    | TEXT       | Version number               |
+| status     | TEXT       | Active / Archived            |
+
+---
+
+### 38. Compliance Tasks
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| title      | TEXT       | Task title                   |
+| description| TEXT       | Task details                 |
+| due_date   | DATE       | Deadline                     |
+| status     | TEXT       | Pending / Completed          |
+
+---
+
+### 39. Annual Returns
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| year       | INTEGER    | Return year                  |
+| date_filed | DATE       | Filing date                  |
+| status     | TEXT       | Filed / Pending              |
+
+---
+
+### 40. Constitution Versions
+| Column     | Type       | Notes                        |
+|------------|------------|------------------------------|
+| id         | INTEGER PK | Primary key                  |
+| organization_id | INTEGER FK | Linked to Organization |
+| version    | TEXT       | Version number               |
+| date       | DATE       | Adoption date                |
+| content    | TEXT       | Constitution text            |
