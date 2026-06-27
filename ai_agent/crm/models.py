@@ -108,3 +108,11 @@ class Message(Base):
     receiver_id = Column(Integer, ForeignKey("players.id"))
     content = Column(String)
     timestamp = Column(String)   # ISO string
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    price = Column(Integer)
+    stock = Column(Integer)

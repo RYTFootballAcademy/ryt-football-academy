@@ -278,3 +278,17 @@ def create_message(
     db.refresh(message)
     return message
 
+from ai_agent.crm.models import Product
+
+@app.post("/crm/product")
+def create_product(
+    name: str,
+    price: int,
+    stock: int,
+    db: Session = Depends(get_db)
+):
+    product = Product(name=name, price=price, stock=stock)
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
