@@ -46,5 +46,15 @@ class FundingOpportunity(Base):
     amount = Column(Integer)
     sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
 
+class ComplianceTask(Base):
+    __tablename__ = "compliance_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(String)
+    due_date = Column(String)   # store as ISO string
+    status = Column(String)     # Pending, Completed, Overdue
+
+
 
 

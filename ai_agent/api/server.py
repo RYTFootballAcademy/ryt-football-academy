@@ -145,4 +145,25 @@ def create_funding(
     db.refresh(funding)
     return funding
 
+from ai_agent.crm.models import ComplianceTask
+
+@app.post("/crm/compliance")
+def create_compliance(
+    title: str,
+    description: str,
+    due_date: str,
+    status: str,
+    db: Session = Depends(get_db)
+):
+    task = ComplianceTask(
+        title=title,
+        description=description,
+        due_date=due_date,
+        status=status
+    )
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
+
 
