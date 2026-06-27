@@ -92,4 +92,11 @@ class Trial(Base):
     result = Column(String)     # e.g., Passed, Failed
     notes = Column(String)
 
+class Attendance(Base):
+    __tablename__ = "attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"))
+    date = Column(String)       # ISO string
+    status = Column(String)     # Present, Absent, Late
 

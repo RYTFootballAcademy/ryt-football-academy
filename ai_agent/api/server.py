@@ -241,3 +241,18 @@ def create_trial(
     db.commit()
     db.refresh(trial)
     return trial
+
+from ai_agent.crm.models import Attendance
+
+@app.post("/crm/attendance")
+def create_attendance(
+    player_id: int,
+    date: str,
+    status: str,
+    db: Session = Depends(get_db)
+):
+    attendance = Attendance(player_id=player_id, date=date, status=status)
+    db.add(attendance)
+    db.commit()
+    db.refresh(attendance)
+    return attendance
