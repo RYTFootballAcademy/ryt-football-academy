@@ -226,3 +226,18 @@ def create_fee(
     db.refresh(fee)
     return fee
 
+from ai_agent.crm.models import Trial
+
+@app.post("/crm/trial")
+def create_trial(
+    player_id: int,
+    date: str,
+    result: str,
+    notes: str,
+    db: Session = Depends(get_db)
+):
+    trial = Trial(player_id=player_id, date=date, result=result, notes=notes)
+    db.add(trial)
+    db.commit()
+    db.refresh(trial)
+    return trial

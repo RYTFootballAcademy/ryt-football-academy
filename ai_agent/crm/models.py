@@ -83,5 +83,13 @@ class Fee(Base):
     due_date = Column(String)   # ISO string
     status = Column(String)     # Pending, Paid, Overdue
 
+class Trial(Base):
+    __tablename__ = "trials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"))
+    date = Column(String)       # ISO string
+    result = Column(String)     # e.g., Passed, Failed
+    notes = Column(String)
 
 
