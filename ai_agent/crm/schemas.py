@@ -5,10 +5,6 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ORMModel(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-
 class ParentCreate(BaseModel):
     name: str
     phone: Optional[str] = None
@@ -17,7 +13,8 @@ class ParentCreate(BaseModel):
     relationship_to_player: Optional[str] = None
 
 
-class ParentRead(ORMModel, ParentCreate):
+class ParentRead(ParentCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -32,7 +29,8 @@ class PlayerCreate(BaseModel):
     status: str = "Active"
 
 
-class PlayerRead(ORMModel, PlayerCreate):
+class PlayerRead(PlayerCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -45,7 +43,8 @@ class CoachCreate(BaseModel):
     license_level: Optional[str] = None
 
 
-class CoachRead(ORMModel, CoachCreate):
+class CoachRead(CoachCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     employment_status: Optional[str] = None
 
@@ -60,7 +59,8 @@ class SponsorCreate(BaseModel):
     status: str = "Prospect"
 
 
-class SponsorRead(ORMModel, SponsorCreate):
+class SponsorRead(SponsorCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -78,7 +78,8 @@ class FundingCreate(BaseModel):
     status: str = "Open"
 
 
-class FundingRead(ORMModel, FundingCreate):
+class FundingRead(FundingCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -89,7 +90,8 @@ class ComplianceCreate(BaseModel):
     status: str = "Pending"
 
 
-class ComplianceRead(ORMModel, ComplianceCreate):
+class ComplianceRead(ComplianceCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -101,7 +103,8 @@ class ProposalCreate(BaseModel):
     status: str = "Draft"
 
 
-class ProposalRead(ORMModel, ProposalCreate):
+class ProposalRead(ProposalCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -112,7 +115,8 @@ class TournamentCreate(BaseModel):
     end_date: Optional[str] = None
 
 
-class TournamentRead(ORMModel, TournamentCreate):
+class TournamentRead(TournamentCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -124,7 +128,8 @@ class FeeCreate(BaseModel):
     category_id: Optional[int] = None
 
 
-class FeeRead(ORMModel, FeeCreate):
+class FeeRead(FeeCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -135,7 +140,8 @@ class TrialCreate(BaseModel):
     notes: Optional[str] = None
 
 
-class TrialRead(ORMModel, TrialCreate):
+class TrialRead(TrialCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -145,7 +151,8 @@ class AttendanceCreate(BaseModel):
     status: str
 
 
-class AttendanceRead(ORMModel, AttendanceCreate):
+class AttendanceRead(AttendanceCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -156,7 +163,8 @@ class MessageCreate(BaseModel):
     timestamp: Optional[str] = None
 
 
-class MessageRead(ORMModel, MessageCreate):
+class MessageRead(MessageCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -168,7 +176,8 @@ class ProductCreate(BaseModel):
     status: str = "Active"
 
 
-class ProductRead(ORMModel, ProductCreate):
+class ProductRead(ProductCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
 
 
@@ -179,5 +188,6 @@ class CampCreate(BaseModel):
     end_date: Optional[str] = None
 
 
-class CampRead(ORMModel, CampCreate):
+class CampRead(CampCreate):
+    model_config = ConfigDict(from_attributes=True)
     id: int
