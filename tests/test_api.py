@@ -11,14 +11,21 @@ os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB.as_posix()}"
 os.environ.pop("FAOS_API_KEY", None)
 
 from ai_agent.api.server import app  # noqa: E402
+from ai_agent.modules.database import engine  # noqa: E402
 
 
 @pytest.fixture(scope="module")
 def client():
+    engine.dispose()
     if TEST_DB.exists():
         TEST_DB.unlink()
+
     with TestClient(app) as test_client:
         yield test_client
+
+    # SQLite files remain locked on Windows while pooled connections are open.
+    # Dispose the engine before deleting the temporary test database.
+    engine.dispose()
     if TEST_DB.exists():
         TEST_DB.unlink()
 
