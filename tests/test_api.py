@@ -135,6 +135,26 @@ def test_sponsor_persistence_and_crud(client: TestClient):
     assert deleted.status_code == 204
 
 
+def test_decision_router_and_whatsapp_queue(client: TestClient):
+    routed = client.post("/chat", json={"message": "We need sponsors for new kits"})
+    assert routed.status_code == 200
+    payload = routed.json()
+    assert payload["module"] == "sponsor"
+    assert payload["action"] == "build_pipeline"
+    assert "/crm/sponsors" in payload["relevant_endpoints"]
+
+    queued = client.post(
+        "/whatsapp/send",
+        json={"recipient": "+27000000000", "message": "Training update"},
+    )
+    assert queued.status_code == 200
+    assert queued.json()["status"] == "queued"
+
+    queue = client.get("/whatsapp/queue")
+    assert queue.status_code == 200
+    assert queue.json()["queued"] >= 1
+
+
 def test_summary_and_dashboard(client: TestClient):
     summary = client.get("/crm/summary")
     assert summary.status_code == 200
