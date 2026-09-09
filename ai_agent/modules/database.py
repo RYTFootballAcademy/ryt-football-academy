@@ -45,6 +45,7 @@ def _load_models() -> None:
     """Import all mapped models before metadata operations."""
     from ai_agent.crm import models as _crm_models  # noqa: F401
     from ai_agent.faos import models as _faos_models  # noqa: F401
+    from ai_agent.faos import npo_models as _npo_models  # noqa: F401
 
 
 def migrate_additive_schema() -> list[str]:
