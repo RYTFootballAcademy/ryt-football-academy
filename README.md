@@ -24,6 +24,7 @@ The project is built with **FastAPI + SQLAlchemy** and runs locally on SQLite by
 - Existing proposal, funding and NPO helper modules retained.
 - Browser dashboard served by the API at `/dashboard/`.
 - Swagger `/docs`, ReDoc `/redoc`, `/health`, automated tests and GitHub Actions CI.
+- Idempotent RYT seed command for the academy record and U9/U10/U13/U15/U17/U19 teams.
 
 ## Windows CMD setup
 
@@ -35,8 +36,11 @@ py -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
 python scripts\migrate_db.py
+python scripts\seed_ryt.py
 start.bat
 ```
+
+The seed command can be run again safely; it does not duplicate the academy or existing age-group teams.
 
 Open:
 
@@ -53,6 +57,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 python scripts/migrate_db.py
+python scripts/seed_ryt.py
 ./start.sh
 ```
 
@@ -158,7 +163,7 @@ For SQLite development, `init_db()` performs additive upgrades automatically at 
 ## Tests
 
 ```cmd
-pytest -q
+python -m pytest -q
 ```
 
 The smoke suite validates:
@@ -171,7 +176,7 @@ The smoke suite validates:
 - CRM summary;
 - dashboard serving.
 
-GitHub Actions also runs `compileall` and `pytest` on pushes and pull requests.
+GitHub Actions also runs `compileall` and the same test suite on pushes and pull requests.
 
 ## Production roadmap
 
