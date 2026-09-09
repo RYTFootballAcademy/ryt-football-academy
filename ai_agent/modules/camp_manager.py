@@ -1,24 +1,24 @@
-# ai_agent/modules/camp_manager.py
-from sqlalchemy import Column, Integer, String, Date
-from ai_agent.modules.database import Base
+"""Camp helper backed by the canonical CRM Camp model."""
+
 from sqlalchemy.orm import Session
 
-class Camp(Base):
-    __tablename__ = "camps"
+from ai_agent.crm.models import Camp
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    start_date = Column(Date)
-    end_date = Column(Date)
-    capacity = Column(Integer)
 
 class CampManager:
     def add_camp(self, db: Session, name: str, start_date, end_date, capacity: int):
-        camp = Camp(name=name, start_date=start_date, end_date=end_date, capacity=capacity)
+        start_value = start_date.isoformat() if hasattr(start_date, "isoformat") else str(start_date)
+        end_value = end_date.isoformat() if hasattr(end_date, "isoformat") else str(end_date)
+        camp = Camp(
+            name=name,
+            start_date=start_value,
+            end_date=end_value,
+            capacity=capacity,
+        )
         db.add(camp)
         db.commit()
         db.refresh(camp)
         return camp
 
     def list_camps(self, db: Session):
-        return db.query(Camp).all()
+        return db.query(Camp).order_by(Camp.id.desc()).all()

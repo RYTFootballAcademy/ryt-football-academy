@@ -1,80 +1,49 @@
-# RYT Football Academy AI Agent
+# RYT Sports Academy FAOS · Application Package
 
-## Overview
-This is the foundational AI Agent system for RYT Football Academy (South Africa). It is designed as a modular automation and decision-support system to help manage:
+`ai_agent` contains the Python application for the RYT Football Academy Operating System (FAOS). The root `README.md` is the primary setup and operations guide.
 
-- Football academy operations
-- Sponsor acquisition workflows (structured outreach support, not guaranteed results)
-- NPO administrative tracking (members, directors, compliance tasks)
-- Funding alignment with South African Department of Social Development frameworks
-- Football coaching business (camps, training programs, scheduling)
-- Parent communication system integration (WhatsApp workflows via external APIs)
-- Fan shop / merchandise business operations
-- Legal document drafting assistance (NOT a licensed lawyer; informational support only)
+## Package map
 
----
+```text
+ai_agent/
+  api/       FastAPI application entry point
+  core/      deterministic academy decision router
+  crm/       typed day-to-day academy CRM API and core models
+  faos/      extended FAOS data model and generic administration API
+  modules/   specialist helpers retained for sponsorship, NPO, funding,
+             proposals, camps, commerce, communication and other workflows
+```
 
-## ⚠️ Important Disclaimer
-This system is NOT a lawyer, financial advisor, or guaranteed sponsor acquisition tool. It provides structured automation, templates, reminders, and data organization to support decision-making.
+## Current capabilities
 
----
+- Academy, team, player, parent and coach records
+- Attendance, training/match/development resources
+- Fees, payments, budgets, income, expenses and bank-account records
+- Persistent sponsor/funding/proposal pipeline
+- NPO governance and compliance resources
+- Products, customers, orders and camps
+- AI-layer storage for conversations, reports, proposals and recommendations
+- Offline deterministic `/chat` decision support
+- WhatsApp queue ready for a future Meta/Twilio delivery adapter
+- Dashboard, Swagger/ReDoc, migrations, seed data, tests and CI
 
-## Core Modules
+## Design principles
 
-### Sponsor Engine
-- Builds sponsor lists (local businesses in Schweizer-Reneke & South Africa)
-- Generates outreach messages
-- Tracks responses and follow-ups
-- Maintains sponsor pipeline CRM
+1. **One database authority.** All models use `ai_agent.modules.database.Base` and `SessionLocal`.
+2. **Preserve existing data.** Local SQLite upgrades are additive; no tables are dropped by startup migration.
+3. **Typed core workflows.** Frequent academy operations use `/crm` Pydantic routes.
+4. **Complete extensibility.** The full mapped schema is available through `/faos` administration routes.
+5. **No fake integrations.** WhatsApp delivery and generative-AI providers remain optional until real credentials/providers are configured.
+6. **Human accountability.** Legal, financial, governance and externally sent/generated material requires appropriate review.
 
-### NPO Manager
-- Tracks directors and members
-- Flags inactive members
-- Stores compliance documents
-- Supports DSD-aligned funding application preparation
+## Start point
 
-### Coaching & Camps Manager
-- Training schedules
-- Player attendance tracking
-- Camp planning
-- Revenue tracking
+From the repository root on Windows CMD:
 
-### Communication Hub
-- WhatsApp integration placeholder (WhatsApp Business API / Twilio)
-- Parent announcements system
-- Automated messaging workflows
+```cmd
+python scripts\migrate_db.py
+python scripts\seed_ryt.py
+start.bat
+```
 
-### Fan Shop System
-- Product catalog structure
-- Orders and inventory tracking
-- Sales reporting
-
-### Legal & Document Assistant (Support Only)
-- Contract templates
-- Basic legal drafting support
-- Compliance checklists
-
----
-
-## Suggested Tech Stack
-- Python (core AI engine)
-- FastAPI (backend)
-- SQLite / PostgreSQL (database)
-- React (dashboard)
-- OpenAI API (AI reasoning layer)
-- WhatsApp Business API / Twilio (messaging)
-
----
-
-## Next Build Steps
-1. Build `/core/agent.py`
-2. Build `/modules/sponsors.py`
-3. Build `/modules/npo.py`
-4. Build `/modules/coaching.py`
-5. Build `/modules/commerce.py`
-6. Build `/api/server.py`
-
----
-
-## Goal
-Turn RYT Football Academy into a structured, sponsor-ready, financially sustainable development academy operating system.
+Then open `/dashboard/` or `/docs` on the local server. See the root `README.md` for complete installation, configuration, testing and production guidance.

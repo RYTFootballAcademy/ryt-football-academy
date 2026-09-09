@@ -1,137 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>RYT Football Academy Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background: #1e293b;
-            padding: 20px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            padding: 20px;
-        }
-        .card {
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 10px;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 8px;
-            border-radius: 6px;
-            border: none;
-        }
-        button {
-            background: #22c55e;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #16a34a;
-        }
-        pre {
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 6px;
-            overflow-x: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RYT Sports Academy · FAOS</title>
+  <style>
+    :root { --blue:#0057D9; --gold:#D4AF37; --ink:#0f172a; --panel:#172033; --text:#e8eef8; --muted:#9fb0c8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Segoe UI,Arial,sans-serif; background:var(--ink); color:var(--text); }
+    header { padding:22px clamp(18px,4vw,48px); background:linear-gradient(135deg,#0b1b3a,var(--blue)); border-bottom:2px solid var(--gold); }
+    header h1 { margin:0 0 5px; font-size:clamp(22px,3vw,34px); }
+    header p { margin:0; color:#dbe7ff; }
+    nav { display:flex; gap:12px; flex-wrap:wrap; margin-top:15px; }
+    nav a { color:white; text-decoration:none; border:1px solid rgba(255,255,255,.35); padding:8px 12px; border-radius:8px; }
+    main { padding:22px clamp(18px,4vw,48px) 50px; }
+    .status { display:flex; gap:12px; align-items:center; margin-bottom:18px; color:var(--muted); }
+    .dot { width:10px; height:10px; border-radius:50%; background:#64748b; }
+    .dot.ok { background:#22c55e; box-shadow:0 0 12px #22c55e; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+    .card { background:var(--panel); border:1px solid #26334a; border-radius:14px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.16); }
+    .card h2 { margin:0 0 12px; font-size:18px; }
+    .metric-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .metric { background:#0e1728; border-radius:10px; padding:12px; }
+    .metric strong { display:block; font-size:24px; color:white; }
+    .metric span { color:var(--muted); font-size:12px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-top:10px; }
+    input, textarea, select, button { width:100%; border-radius:8px; border:1px solid #334155; padding:10px 11px; margin-top:5px; font:inherit; }
+    input, textarea, select { background:#0e1728; color:white; }
+    textarea { min-height:84px; resize:vertical; }
+    button { background:var(--blue); color:white; border:none; cursor:pointer; font-weight:700; margin-top:12px; }
+    button:hover { filter:brightness(1.08); }
+    .secondary { background:#26334a; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#0b1220; color:#d8e4f5; border-radius:8px; padding:10px; min-height:44px; overflow:auto; }
+    .gold { color:var(--gold); }
+    footer { color:var(--muted); margin-top:24px; font-size:12px; }
+  </style>
 </head>
 <body>
-
 <header>
-    RYT Football Academy Dashboard
+  <h1>RYT Sports Academy <span class="gold">FAOS</span></h1>
+  <p>Football Academy Operating System · operations, development, finance, sponsorship and governance</p>
+  <nav>
+    <a href="/docs" target="_blank">API Docs</a>
+    <a href="/redoc" target="_blank">ReDoc</a>
+    <a href="/faos/resources" target="_blank">FAOS Resources</a>
+  </nav>
 </header>
+<main>
+  <div class="status"><span id="healthDot" class="dot"></span><span id="healthText">Checking system…</span></div>
+  <div class="grid">
+    <section class="card">
+      <h2>Academy snapshot</h2>
+      <div id="metrics" class="metric-grid"></div>
+      <button class="secondary" onclick="loadSummary()">Refresh</button>
+    </section>
 
-<div class="container">
+    <section class="card">
+      <h2>Add sponsor lead</h2>
+      <label>Name<input id="sponsorName" placeholder="Business or organisation"></label>
+      <label>Industry<input id="sponsorIndustry" placeholder="Retail, mining, banking…"></label>
+      <label>Contact person<input id="sponsorContact" placeholder="Name"></label>
+      <label>Email<input id="sponsorEmail" type="email" placeholder="contact@example.com"></label>
+      <label>Phone<input id="sponsorPhone" placeholder="+27…"></label>
+      <button onclick="addSponsor()">Create sponsor</button>
+      <pre id="sponsorOutput">Ready.</pre>
+    </section>
 
-    <div class="card">
-        <h3>AI Chat</h3>
-        <input id="chatInput" placeholder="Type request (e.g. need sponsors)" />
-        <button onclick="sendChat()">Send</button>
-        <pre id="chatOutput"></pre>
-    </div>
+    <section class="card">
+      <h2>AI routing assistant</h2>
+      <label>Request<textarea id="chatInput" placeholder="We need sponsors for new kits"></textarea></label>
+      <button onclick="sendChat()">Route request</button>
+      <pre id="chatOutput">Ready.</pre>
+    </section>
 
-    <div class="card">
-        <h3>Add Sponsor Lead</h3>
-        <input id="sponsorName" placeholder="Sponsor Name" />
-        <input id="sponsorIndustry" placeholder="Industry" />
-        <button onclick="addSponsor()">Add Sponsor</button>
-        <pre id="sponsorOutput"></pre>
-    </div>
-
-    <div class="card">
-        <h3>NPO Compliance</h3>
-        <button onclick="checkCompliance()">Check Status</button>
-        <pre id="npoOutput"></pre>
-    </div>
-
-    <div class="card">
-        <h3>WhatsApp Send</h3>
-        <input id="waNumber" placeholder="Recipient" />
-        <input id="waMessage" placeholder="Message" />
-        <button onclick="sendWhatsApp()">Send</button>
-        <pre id="waOutput"></pre>
-    </div>
-
-</div>
-
+    <section class="card">
+      <h2>WhatsApp queue</h2>
+      <label>Recipient<input id="waNumber" placeholder="+27…"></label>
+      <label>Message<textarea id="waMessage" placeholder="Academy announcement"></textarea></label>
+      <button onclick="sendWhatsApp()">Queue message</button>
+      <button class="secondary" onclick="loadQueue()">Queue status</button>
+      <pre id="waOutput">No messages queued in this process yet.</pre>
+    </section>
+  </div>
+  <footer>FAOS v2 · Use Swagger at <strong>/docs</strong> for full CRM and administration endpoints.</footer>
+</main>
 <script>
-const API = "http://localhost:8000";
+const API = window.location.origin;
 
-async function sendChat() {
-    const message = document.getElementById("chatInput").value;
-    const res = await fetch(`${API}/chat`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message})
-    });
-    document.getElementById("chatOutput").textContent = JSON.stringify(await res.json(), null, 2);
+async function api(path, options={}) {
+  const response = await fetch(`${API}${path}`, options);
+  const text = await response.text();
+  let data = text;
+  try { data = text ? JSON.parse(text) : null; } catch (_) {}
+  if (!response.ok) throw new Error(typeof data === 'string' ? data : JSON.stringify(data));
+  return data;
+}
+
+async function loadHealth() {
+  try {
+    const data = await api('/health');
+    document.getElementById('healthDot').classList.add('ok');
+    document.getElementById('healthText').textContent = `${data.service} · ${data.version} · ${data.database}`;
+  } catch (error) {
+    document.getElementById('healthText').textContent = `API unavailable: ${error.message}`;
+  }
+}
+
+async function loadSummary() {
+  const target = document.getElementById('metrics');
+  try {
+    const data = await api('/crm/summary');
+    const priority = ['players','parents','coaches','sponsors','fees','trials','attendance','camps'];
+    target.innerHTML = priority.map(key => `<div class="metric"><strong>${data[key] ?? 0}</strong><span>${key.replaceAll('_',' ')}</span></div>`).join('');
+  } catch (error) { target.innerHTML = `<pre>${error.message}</pre>`; }
 }
 
 async function addSponsor() {
-    const name = document.getElementById("sponsorName").value;
-    const industry = document.getElementById("sponsorIndustry").value;
-    const res = await fetch(`${API}/sponsors/add`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({name, industry})
+  const output = document.getElementById('sponsorOutput');
+  try {
+    const data = await api('/crm/sponsors', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:document.getElementById('sponsorName').value,
+        industry:document.getElementById('sponsorIndustry').value || null,
+        contact_person:document.getElementById('sponsorContact').value || null,
+        email:document.getElementById('sponsorEmail').value || null,
+        phone:document.getElementById('sponsorPhone').value || null
+      })
     });
-    document.getElementById("sponsorOutput").textContent = JSON.stringify(await res.json(), null, 2);
+    output.textContent = JSON.stringify(data,null,2); loadSummary();
+  } catch (error) { output.textContent = error.message; }
 }
 
-async function checkCompliance() {
-    const res = await fetch(`${API}/npo/compliance`);
-    document.getElementById("npoOutput").textContent = JSON.stringify(await res.json(), null, 2);
+async function sendChat() {
+  const output = document.getElementById('chatOutput');
+  try {
+    const data = await api('/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:document.getElementById('chatInput').value})});
+    output.textContent = JSON.stringify(data,null,2);
+  } catch (error) { output.textContent = error.message; }
 }
 
 async function sendWhatsApp() {
-    const recipient = document.getElementById("waNumber").value;
-    const message = document.getElementById("waMessage").value;
-    const res = await fetch(`${API}/whatsapp/send`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({recipient, message})
-    });
-    document.getElementById("waOutput").textContent = JSON.stringify(await res.json(), null, 2);
+  const output = document.getElementById('waOutput');
+  try {
+    const data = await api('/whatsapp/send', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipient:document.getElementById('waNumber').value,message:document.getElementById('waMessage').value})});
+    output.textContent = JSON.stringify(data,null,2);
+  } catch (error) { output.textContent = error.message; }
 }
-</script>
 
+async function loadQueue() {
+  const output = document.getElementById('waOutput');
+  try { output.textContent = JSON.stringify(await api('/whatsapp/queue'),null,2); }
+  catch (error) { output.textContent = error.message; }
+}
+
+loadHealth(); loadSummary();
+</script>
 </body>
 </html>
