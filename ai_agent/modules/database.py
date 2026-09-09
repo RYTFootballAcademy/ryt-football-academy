@@ -48,12 +48,12 @@ def _load_models() -> None:
 
 
 def migrate_additive_schema() -> list[str]:
-    """Add columns that exist in SQLAlchemy metadata but are missing in SQLite.
+    """Add missing model columns to legacy SQLite databases without dropping data.
 
-    This deliberately performs additive migrations only. It preserves existing data
-    and fixes legacy databases created by earlier versions of this project. New
-    tables are created by ``Base.metadata.create_all``. For production PostgreSQL
-    deployments, use a formal migration tool before destructive schema changes.
+    New tables are created by ``Base.metadata.create_all``. Existing tables are
+    upgraded only by adding columns and backfilling safe workflow defaults. For
+    production PostgreSQL deployments, use formal versioned migrations before
+    destructive or data-transforming changes.
     """
     _load_models()
     Base.metadata.create_all(bind=engine)
@@ -75,14 +75,15 @@ def migrate_additive_schema() -> list[str]:
                 if column.name in existing:
                     continue
                 column_type = column.type.compile(dialect=engine.dialect)
-                statement = (
-                    f"ALTER TABLE {quote(table.name)} "
-                    f"ADD COLUMN {quote(column.name)} {column_type}"
+                connection.execute(
+                    text(
+                        f"ALTER TABLE {quote(table.name)} "
+                        f"ADD COLUMN {quote(column.name)} {column_type}"
+                    )
                 )
-                connection.execute(text(statement))
                 applied.append(f"{table.name}.{column.name}")
 
-        # Preserve contact details from the original academy_crm Parent schema.
+        # Preserve contact details from the earliest CRM Parent schema.
         if "parents" in table_names:
             parent_columns = {
                 column["name"] for column in inspect(engine).get_columns("parents")
@@ -91,6 +92,33 @@ def migrate_additive_schema() -> list[str]:
                 connection.execute(
                     text("UPDATE parents SET phone = contact WHERE phone IS NULL AND contact IS NOT NULL")
                 )
+
+        # Added columns are nullable in SQLite ALTER TABLE operations. Backfill
+        # workflow defaults so legacy rows serialize cleanly through typed APIs.
+        backfills = {
+            "players": ("status", "Active"),
+            "coaches": ("employment_status", "Active"),
+            "sponsors": ("status", "Prospect"),
+            "funding_opportunities": ("status", "Open"),
+            "compliance_tasks": ("status", "Pending"),
+            "proposals": ("status", "Draft"),
+            "fees": ("status", "Pending"),
+            "products": ("status", "Active"),
+        }
+        fresh_inspector = inspect(engine)
+        for table_name, (column_name, value) in backfills.items():
+            if table_name not in table_names:
+                continue
+            columns = {column["name"] for column in fresh_inspector.get_columns(table_name)}
+            if column_name not in columns:
+                continue
+            connection.execute(
+                text(
+                    f"UPDATE {quote(table_name)} SET {quote(column_name)} = :value "
+                    f"WHERE {quote(column_name)} IS NULL"
+                ),
+                {"value": value},
+            )
 
     return applied
 
