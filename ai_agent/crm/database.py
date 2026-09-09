@@ -1,43 +1,22 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+"""Compatibility exports for the legacy CRM database module.
 
-Base = declarative_base()
-engine = create_engine("sqlite:///academy_crm.db")
-SessionLocal = sessionmaker(bind=engine)
+The project now uses a single database configuration in
+``ai_agent.modules.database``. Importing from this module remains supported so
+older code does not silently create or write to a second ``academy_crm.db``.
+"""
 
-class Player(Base):
-    __tablename__ = "players"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    age = Column(Integer)
-    position = Column(String)
-    parent_id = Column(Integer, ForeignKey("parents.id"))
+from ai_agent.modules.database import Base, SessionLocal, engine, get_db, init_db
+from ai_agent.crm.models import Fee, Parent, Player, Tournament, Trial
 
-class Parent(Base):
-    __tablename__ = "parents"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    contact = Column(String)
-    players = relationship("Player", backref="parent")
-
-class Fee(Base):
-    __tablename__ = "fees"
-    id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("players.id"))
-    amount = Column(Integer)
-    status = Column(String)
-    due_date = Column(String)
-
-class Trial(Base):
-    __tablename__ = "trials"
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(String)
-    player_id = Column(Integer, ForeignKey("players.id"))
-    result = Column(String)
-
-class Tournament(Base):
-    __tablename__ = "tournaments"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    start_date = Column(String)
-    end_date = Column(String)
+__all__ = [
+    "Base",
+    "engine",
+    "SessionLocal",
+    "get_db",
+    "init_db",
+    "Player",
+    "Parent",
+    "Fee",
+    "Trial",
+    "Tournament",
+]
