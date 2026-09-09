@@ -1,11 +1,11 @@
 """Core CRM models used by the RYT Football Academy Operating System (FAOS).
 
-These models intentionally retain the original MVP field names while adding the
-fields required by the repository's database specification. This keeps existing
-SQLite data and API clients compatible while allowing the system to grow.
+These models intentionally retain original MVP/helper-module fields while adding
+the fields required by the repository's database specification. This keeps
+existing SQLite data and older callers compatible while allowing FAOS to grow.
 """
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Text
 
 from ai_agent.modules.database import Base
 
@@ -70,6 +70,7 @@ class Coach(Base):
     qualifications = Column(Text, nullable=True)
     license_level = Column(String, nullable=True)
     employment_status = Column(String, default="Active")
+    assigned_team = Column(String, nullable=True)  # legacy helper compatibility
 
 
 class Sponsor(Base):
@@ -160,6 +161,7 @@ class Attendance(Base):
     id = Column(Integer, primary_key=True, index=True)
     player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
     date = Column(String, nullable=False)
+    session_type = Column(String, nullable=True)
     status = Column(String, nullable=False)
 
 
@@ -169,8 +171,11 @@ class Message(Base):
     id = Column(Integer, primary_key=True, index=True)
     sender_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     receiver_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    parent_id = Column(Integer, ForeignKey("parents.id"), nullable=True)
     content = Column(Text, nullable=False)
     timestamp = Column(String, nullable=True)
+    date_sent = Column(String, nullable=True)
+    status = Column(String, default="Sent")
 
 
 class Product(Base):
@@ -179,7 +184,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-    price = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
     status = Column(String, default="Active")
 
@@ -193,3 +198,4 @@ class Camp(Base):
     location = Column(String, nullable=True)
     start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)
+    capacity = Column(Integer, nullable=True)
