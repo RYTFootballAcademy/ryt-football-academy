@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from ai_agent.modules.database import Base, get_db
 from ai_agent.crm import models as _crm_models  # noqa: F401
 from ai_agent.faos import models as _faos_models  # noqa: F401
+from ai_agent.faos import npo_models as _npo_models  # noqa: F401
 
 router = APIRouter(prefix="/faos", tags=["FAOS Admin"])
 
