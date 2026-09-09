@@ -1,7 +1,20 @@
-"""Seed a fresh FAOS database with the RYT Sports Academy foundation."""
+"""Seed a fresh FAOS database with the RYT Sports Academy foundation.
 
-from ai_agent.faos.models import Organization, Team
-from ai_agent.modules.database import SessionLocal, init_db
+This file can be launched either as ``python scripts\seed_ryt.py`` on Windows
+or ``python -m scripts.seed_ryt`` on any platform.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from ai_agent.faos.models import Organization, Team  # noqa: E402
+from ai_agent.modules.database import SessionLocal, init_db  # noqa: E402
 
 ACADEMY_NAME = "Roshunville Young Tigers Sports Academy"
 AGE_GROUPS = ["U9", "U10", "U13", "U15", "U17", "U19"]
