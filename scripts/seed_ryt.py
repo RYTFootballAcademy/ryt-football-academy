@@ -1,6 +1,6 @@
 """Seed a fresh FAOS database with the RYT Sports Academy foundation.
 
-This file can be launched either as ``python scripts\seed_ryt.py`` on Windows
+This file can be launched either as ``python scripts/seed_ryt.py`` on Windows
 or ``python -m scripts.seed_ryt`` on any platform.
 """
 
