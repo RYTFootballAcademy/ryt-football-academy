@@ -41,6 +41,7 @@ class CoachCreate(BaseModel):
     email: Optional[str] = None
     qualifications: Optional[str] = None
     license_level: Optional[str] = None
+    assigned_team: Optional[str] = None
 
 
 class CoachRead(CoachCreate):
@@ -149,6 +150,7 @@ class AttendanceCreate(BaseModel):
     player_id: int
     date: str
     status: str
+    session_type: Optional[str] = None
 
 
 class AttendanceRead(AttendanceCreate):
@@ -159,8 +161,11 @@ class AttendanceRead(AttendanceCreate):
 class MessageCreate(BaseModel):
     sender_id: Optional[int] = None
     receiver_id: Optional[int] = None
+    parent_id: Optional[int] = None
     content: str
     timestamp: Optional[str] = None
+    date_sent: Optional[str] = None
+    status: str = "Sent"
 
 
 class MessageRead(MessageCreate):
@@ -170,7 +175,7 @@ class MessageRead(MessageCreate):
 
 class ProductCreate(BaseModel):
     name: str
-    price: int = Field(ge=0)
+    price: float = Field(ge=0)
     stock: int = Field(default=0, ge=0)
     category_id: Optional[int] = None
     status: str = "Active"
@@ -186,6 +191,7 @@ class CampCreate(BaseModel):
     location: Optional[str] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    capacity: Optional[int] = Field(default=None, ge=0)
 
 
 class CampRead(CampCreate):
