@@ -1,6 +1,6 @@
 """Run the non-destructive FAOS SQLite schema upgrade manually.
 
-This file can be launched either as ``python scripts\migrate_db.py`` on Windows
+This file can be launched either as ``python scripts/migrate_db.py`` on Windows
 or ``python -m scripts.migrate_db`` on any platform.
 """
 
