@@ -1,0 +1,1 @@
+"""Core academy CRM package."""
