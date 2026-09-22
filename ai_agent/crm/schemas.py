@@ -7,10 +7,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ParentCreate(BaseModel):
     name: str
+    organization_id: Optional[int] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     whatsapp: Optional[str] = None
     relationship_to_player: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
 
 
 class ParentRead(ParentCreate):
@@ -20,12 +25,23 @@ class ParentRead(ParentCreate):
 
 class PlayerCreate(BaseModel):
     name: str
+    organization_id: Optional[int] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    preferred_name: Optional[str] = None
     age: Optional[int] = Field(default=None, ge=0, le=100)
+    gender: Optional[str] = None
+    dob: Optional[str] = None
     position: Optional[str] = None
     parent_id: Optional[int] = None
     team_id: Optional[int] = None
     school: Optional[str] = None
     grade: Optional[str] = None
+    allergies: Optional[str] = None
+    injuries: Optional[str] = None
+    medication: Optional[str] = None
+    registration_date: Optional[str] = None
+    notes: Optional[str] = None
     status: str = "Active"
 
 
