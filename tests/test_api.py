@@ -50,6 +50,7 @@ def test_full_faos_resource_registry(client: TestClient):
         "directors",
         "orders",
         "ai_conversations",
+        "external_portal_accounts",
     ]:
         assert required in payload["resources"]
 
@@ -171,3 +172,64 @@ def test_summary_and_dashboard(client: TestClient):
     dashboard = client.get("/dashboard/")
     assert dashboard.status_code == 200
     assert "FAOS" in dashboard.text
+
+
+def test_agent_approval_workflow(client: TestClient):
+    prepared = client.post(
+        "/agent/prepare",
+        json={
+            "instruction": "Create a compliance task to verify our CIPC status",
+            "organization_id": 1,
+            "priority": "High",
+        },
+    )
+    assert prepared.status_code == 201, prepared.text
+    task = prepared.json()
+    assert task["status"] == "Awaiting Approval"
+    assert task["action_type"] == "create_compliance_task"
+    assert task["requires_approval"] is True
+
+    hidden = client.get("/faos/agent_tasks")
+    assert hidden.status_code == 404
+
+    approved = client.post(
+        f"/agent/tasks/{task['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert approved.status_code == 200, approved.text
+    completed = approved.json()
+    assert completed["status"] == "Completed"
+    assert completed["result"]["resource"] == "compliance_tasks"
+
+    compliance = client.get("/crm/compliance")
+    assert compliance.status_code == 200
+    assert any("CIPC" in item["title"] for item in compliance.json())
+
+    rejected_task = client.post(
+        "/agent/prepare",
+        json={"instruction": "Prepare a parent message about emergency contact information"},
+    )
+    assert rejected_task.status_code == 201
+    rejected = client.post(
+        f"/agent/tasks/{rejected_task.json()['id']}/reject",
+        json={"reason": "Not needed today"},
+    )
+    assert rejected.status_code == 200
+    assert rejected.json()["status"] == "Rejected"
+
+    report_task = client.post(
+        "/agent/prepare",
+        json={"instruction": "Generate a monthly management report"},
+    )
+    assert report_task.status_code == 201
+    report_approved = client.post(
+        f"/agent/tasks/{report_task.json()['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert report_approved.status_code == 200
+    assert report_approved.json()["result"]["resource"] == "generated_reports"
+
+    summary = client.get("/agent/summary")
+    assert summary.status_code == 200
+    assert summary.json()["completed"] >= 2
+    assert summary.json()["rejected"] >= 1
