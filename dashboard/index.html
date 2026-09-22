@@ -310,13 +310,127 @@ async function rejectAgentTask(id) {
   }
 }
 
+async function loadTeams() {
+  const select = document.getElementById('intakeTeam');
+  try {
+    const teams = await api('/faos/teams');
+    const ordered = [...teams].sort((a,b) => (a.id ?? 0) - (b.id ?? 0));
+    select.innerHTML = '<option value="">Select team</option>' + ordered.map(team => {
+      const label = [team.name, team.age_group].filter(Boolean).join(' · ');
+      return `<option value="${team.id}">${esc(label || ('Team ' + team.id))}</option>`;
+    }).join('');
+  } catch (error) {
+    select.innerHTML = '<option value="">Unable to load teams</option>';
+  }
+}
+
+function fieldValue(id) {
+  const value = document.getElementById(id).value.trim();
+  return value || null;
+}
+
+async function createPlayerIntake() {
+  const output = document.getElementById('intakeOutput');
+  try {
+    const name = fieldValue('intakePlayerName');
+    if (!name) throw new Error('Player full name is required.');
+
+    const ageRaw = fieldValue('intakeAge');
+    const teamRaw = document.getElementById('intakeTeam').value;
+    const guardianName = fieldValue('intakeGuardianName');
+
+    const payload = {
+      organization_id: 1,
+      player: {
+        name,
+        dob: fieldValue('intakeDob'),
+        age: ageRaw ? Number(ageRaw) : null,
+        team_id: teamRaw ? Number(teamRaw) : null,
+        position: fieldValue('intakePosition'),
+        school: fieldValue('intakeSchool'),
+        grade: fieldValue('intakeGrade')
+      },
+      guardian: guardianName ? {
+        name: guardianName,
+        relationship_to_player: fieldValue('intakeRelationship'),
+        phone: fieldValue('intakeGuardianPhone'),
+        whatsapp: fieldValue('intakeGuardianWhatsapp'),
+        email: fieldValue('intakeGuardianEmail'),
+        emergency_contact_name: fieldValue('intakeEmergencyName'),
+        emergency_contact_phone: fieldValue('intakeEmergencyPhone')
+      } : null,
+      forms: {
+        registration_form_status: document.getElementById('intakeRegistrationForm').value,
+        medical_form_status: document.getElementById('intakeMedicalForm').value,
+        emergency_contact_form_status: document.getElementById('intakeEmergencyForm').value,
+        media_consent_status: document.getElementById('intakeMediaConsent').value,
+        indemnity_form_status: document.getElementById('intakeIndemnity').value,
+        medical_info_confirmed: document.getElementById('intakeMedicalConfirmed').value === 'true'
+      }
+    };
+
+    const data = await api('/crm/intake/player', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadSummary();
+    await loadIntakeReadiness();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function loadIntakeReadiness() {
+  const target = document.getElementById('intakeReadiness');
+  try {
+    const data = await api('/crm/intake/readiness?organization_id=1');
+    const header = `<div class="metric-grid" style="margin-top:10px">
+      <div class="metric"><strong>${data.players}</strong><span>Players</span></div>
+      <div class="metric"><strong>${data.incomplete}</strong><span>Incomplete intake</span></div>
+    </div>`;
+    const rows = data.records.map(item => `
+      <div class="readiness-item">
+        <strong>${esc(item.player_name)}</strong> · ${item.completeness_percent}% complete
+        <div>${item.missing.length ? 'Missing: ' + esc(item.missing.join(', ')) : 'Intake complete ✓'}</div>
+      </div>
+    `).join('');
+    target.innerHTML = header + rows;
+  } catch (error) {
+    target.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function submitBulkIntake() {
+  const output = document.getElementById('bulkIntakeOutput');
+  try {
+    const raw = document.getElementById('bulkIntakeJson').value.trim();
+    if (!raw) throw new Error('Paste the intake JSON first.');
+    const parsed = JSON.parse(raw);
+    const records = Array.isArray(parsed) ? parsed : parsed.records;
+    if (!Array.isArray(records) || !records.length) throw new Error('Provide a JSON array of intake records.');
+
+    const data = await api('/crm/intake/bulk', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({records})
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadSummary();
+    await loadIntakeReadiness();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
 async function loadQueue() {
   const output = document.getElementById('waOutput');
   try { output.textContent = JSON.stringify(await api('/whatsapp/queue'),null,2); }
   catch (error) { output.textContent = error.message; }
 }
 
-loadHealth(); loadSummary(); loadAgentQueue();
+loadHealth(); loadSummary(); loadAgentQueue(); loadTeams(); loadIntakeReadiness();
 </script>
 </body>
 </html>
