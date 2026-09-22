@@ -95,3 +95,7 @@ build/
 *.tmp
 *.temp
 *.bak
+
+# Local browser automation state
+.faos_browser/
+playwright-report/
