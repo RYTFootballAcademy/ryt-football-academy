@@ -1,6 +1,6 @@
 """Company-governance and regulator-specific workflow records for FAOS."""
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
 
 from ai_agent.modules.database import Base
 
@@ -85,3 +85,44 @@ class DirectorChangeCase(Base):
     confirmed_date = Column(String, nullable=True)
     effective_date = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
+
+
+class ExternalPortalWorkflow(Base):
+    """Local-only orchestration metadata for regulated portal workflows.
+
+    Authentication secrets, OTPs, card details, cookies and security answers are
+    deliberately excluded. The user enters those directly into the browser.
+    """
+
+    __tablename__ = "external_portal_workflows"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    service = Column(String, nullable=False)
+    workflow_type = Column(String, nullable=False)
+    registration_number = Column(String, nullable=True)
+    status = Column(String, default="Prepared")
+    current_step = Column(String, nullable=True)
+    requires_user_login = Column(Boolean, default=True)
+    requires_user_approval = Column(Boolean, default=True)
+    created_at = Column(String, nullable=False)
+    started_at = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)
+    completed_at = Column(String, nullable=True)
+    process_id = Column(Integer, nullable=True)
+    external_reference = Column(String, nullable=True)
+    last_url = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+
+
+class ExternalPortalWorkflowEvent(Base):
+    """Non-secret audit events emitted by a portal automation run."""
+
+    __tablename__ = "external_portal_workflow_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workflow_id = Column(Integer, ForeignKey("external_portal_workflows.id"), nullable=False)
+    event_time = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)
+    message = Column(Text, nullable=True)
+    page_url = Column(Text, nullable=True)
