@@ -23,6 +23,8 @@ from ai_agent.faos import npo_models as _npo_models  # noqa: F401
 
 router = APIRouter(prefix="/faos", tags=["FAOS Admin"])
 
+INTERNAL_RESOURCES = {"agent_tasks"}
+
 
 def _require_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
     expected = os.getenv("FAOS_API_KEY")
@@ -35,6 +37,7 @@ def _resources() -> dict[str, type]:
         mapper.class_.__tablename__: mapper.class_
         for mapper in Base.registry.mappers
         if hasattr(mapper.class_, "__tablename__")
+        and mapper.class_.__tablename__ not in INTERNAL_RESOURCES
     }
 
 
