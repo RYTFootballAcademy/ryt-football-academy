@@ -51,6 +51,7 @@ def test_full_faos_resource_registry(client: TestClient):
         "orders",
         "ai_conversations",
         "external_portal_accounts",
+        "player_intake_status",
     ]:
         assert required in payload["resources"]
 
@@ -233,3 +234,138 @@ def test_agent_approval_workflow(client: TestClient):
     assert summary.status_code == 200
     assert summary.json()["completed"] >= 2
     assert summary.json()["rejected"] >= 1
+
+
+def test_player_guardian_intake_and_readiness(client: TestClient):
+    team = client.post(
+        "/faos/teams",
+        json={
+            "organization_id": 1,
+            "name": "RYT U15",
+            "age_group": "U15",
+            "season": "2026",
+        },
+    )
+    assert team.status_code == 201, team.text
+    team_id = team.json()["id"]
+
+    intake = client.post(
+        "/crm/intake/player",
+        json={
+            "organization_id": 1,
+            "player": {
+                "name": "Intake Test Player",
+                "age": 14,
+                "dob": "2012-02-10",
+                "team_id": team_id,
+                "position": "Midfielder",
+                "school": "Test Secondary",
+                "grade": "8",
+                "allergies": "None known",
+                "injuries": "None known",
+                "medication": "None",
+            },
+            "guardian": {
+                "name": "Intake Test Guardian",
+                "phone": "0711111111",
+                "whatsapp": "0711111111",
+                "email": "intake-parent@example.com",
+                "relationship_to_player": "Parent",
+                "emergency_contact_name": "Backup Guardian",
+                "emergency_contact_phone": "0722222222",
+                "emergency_contact_relationship": "Relative",
+            },
+            "forms": {
+                "registration_form_status": "Signed",
+                "medical_form_status": "Signed",
+                "emergency_contact_form_status": "Signed",
+                "media_consent_status": "Signed",
+                "indemnity_form_status": "Signed",
+                "medical_info_confirmed": True,
+            },
+        },
+    )
+    assert intake.status_code == 201, intake.text
+    result = intake.json()
+    assert result["player_id"] > 0
+    assert result["parent_id"] > 0
+    assert result["team_id"] == team_id
+
+    readiness = client.get("/crm/intake/readiness?organization_id=1")
+    assert readiness.status_code == 200, readiness.text
+    record = next(
+        item
+        for item in readiness.json()["records"]
+        if item["player_id"] == result["player_id"]
+    )
+    assert record["complete"] is True
+    assert record["completeness_percent"] == 100
+    assert record["missing"] == []
+
+    duplicate = client.post(
+        "/crm/intake/player",
+        json={
+            "organization_id": 1,
+            "player": {
+                "name": "Intake Test Player",
+                "dob": "2012-02-10",
+                "team_id": team_id,
+            },
+            "guardian": {
+                "name": "Intake Test Guardian",
+                "phone": "0711111111",
+            },
+        },
+    )
+    assert duplicate.status_code == 422
+
+
+def test_bulk_player_intake_reuses_guardian(client: TestClient):
+    teams = client.get("/faos/teams")
+    assert teams.status_code == 200
+    team_id = teams.json()[0]["id"]
+
+    bulk = client.post(
+        "/crm/intake/bulk",
+        json={
+            "records": [
+                {
+                    "organization_id": 1,
+                    "player": {
+                        "name": "Bulk Player One",
+                        "age": 13,
+                        "team_id": team_id,
+                        "school": "Bulk School",
+                        "grade": "7",
+                    },
+                    "guardian": {
+                        "name": "Shared Guardian",
+                        "phone": "0733333333",
+                        "whatsapp": "0733333333",
+                        "relationship_to_player": "Parent",
+                    },
+                },
+                {
+                    "organization_id": 1,
+                    "player": {
+                        "name": "Bulk Player Two",
+                        "age": 14,
+                        "team_id": team_id,
+                        "school": "Bulk School",
+                        "grade": "8",
+                    },
+                    "guardian": {
+                        "name": "Shared Guardian",
+                        "phone": "0733333333",
+                        "whatsapp": "0733333333",
+                        "relationship_to_player": "Parent",
+                    },
+                },
+            ]
+        },
+    )
+    assert bulk.status_code == 201, bulk.text
+    payload = bulk.json()
+    assert payload["created_count"] == 2
+    assert payload["error_count"] == 0
+    assert payload["created"][0]["parent_id"] == payload["created"][1]["parent_id"]
