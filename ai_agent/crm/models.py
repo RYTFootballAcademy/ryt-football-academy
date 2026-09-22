@@ -5,7 +5,7 @@ the fields required by the repository's database specification. This keeps
 existing SQLite data and older callers compatible while allowing FAOS to grow.
 """
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
 
 from ai_agent.modules.database import Base
 
@@ -14,6 +14,7 @@ class Player(Base):
     __tablename__ = "players"
 
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
     parent_id = Column(Integer, ForeignKey("parents.id"), nullable=True)
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     name = Column(String, index=True, nullable=True)
@@ -53,7 +54,27 @@ class Parent(Base):
     email = Column(String, nullable=True)
     address = Column(Text, nullable=True)
     emergency_contact = Column(String, nullable=True)
+    emergency_contact_name = Column(String, nullable=True)
+    emergency_contact_phone = Column(String, nullable=True)
+    emergency_contact_relationship = Column(String, nullable=True)
     relationship_to_player = Column(String, nullable=True)
+
+
+class PlayerIntakeStatus(Base):
+    """Tracks onboarding-document completeness separately from player details."""
+
+    __tablename__ = "player_intake_status"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False, unique=True)
+    registration_form_status = Column(String, default="Missing")
+    medical_form_status = Column(String, default="Missing")
+    emergency_contact_form_status = Column(String, default="Missing")
+    media_consent_status = Column(String, default="Missing")
+    indemnity_form_status = Column(String, default="Missing")
+    medical_info_confirmed = Column(Boolean, default=False)
+    last_reviewed_date = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
 
 
 class Coach(Base):
