@@ -357,6 +357,218 @@ async function rejectAgentTask(id) {
   }
 }
 
+async function loadCompanyDashboard() {
+  const metrics = document.getElementById('companyMetrics');
+  const blockers = document.getElementById('companyBlockers');
+  const directorsTarget = document.getElementById('companyDirectors');
+  const changesTarget = document.getElementById('companyChanges');
+  const directorSelect = document.getElementById('companyOutgoingDirector');
+  try {
+    const data = await api('/company/dashboard?organization_id=1');
+
+    const annualOpen = (data.cipc_annual_returns || []).filter(item => {
+      const status = String(item.status || '').toLowerCase();
+      return !['filed','submitted','complete','completed','confirmed','up to date'].includes(status);
+    }).length;
+
+    metrics.innerHTML = [
+      ['CIPC returns', (data.cipc_annual_returns || []).length],
+      ['Returns open', annualOpen],
+      ['Directors', (data.directors || []).length],
+      ['Blockers', (data.blockers || []).length]
+    ].map(([label,value]) => `<div class="metric"><strong>${value}</strong><span>${esc(label)}</span></div>`).join('');
+
+    blockers.innerHTML = (data.blockers || []).length
+      ? (data.blockers || []).map(item => `<div class="company-blocker">${esc(item)}</div>`).join('')
+      : '<div class="company-ok">No company-compliance blockers are currently recorded in FAOS.</div>';
+
+    const directors = data.directors || [];
+    directorsTarget.innerHTML = directors.length
+      ? '<h3 style="font-size:14px;margin:14px 0 6px">Director register</h3>' +
+        directors.map(item => `<div class="company-row"><strong>${esc([item.first_name,item.last_name].filter(Boolean).join(' '))}</strong> · ${esc(item.status || 'Unknown')}</div>`).join('')
+      : '<div class="company-row">No directors recorded.</div>';
+
+    directorSelect.innerHTML = '<option value="">Select director</option>' +
+      directors.map(item => `<option value="${item.id}">${esc([item.first_name,item.last_name].filter(Boolean).join(' '))} · ${esc(item.status || '')}</option>`).join('');
+
+    const changes = data.director_changes || [];
+    changesTarget.innerHTML = changes.length
+      ? '<h3 style="font-size:14px;margin:14px 0 6px">Director change cases</h3>' +
+        changes.map(item => {
+          let actions = '';
+          if (item.status === 'Draft') {
+            actions = `<button class="secondary" onclick="markDirectorChangeReady(${item.id})">Mark ready to file</button>`;
+          } else if (item.status === 'Ready to File') {
+            actions = `<button class="secondary" onclick="markDirectorChangeFiled(${item.id})">Record CIPC filing</button>`;
+          } else if (item.status === 'Filed - Awaiting CIPC Confirmation') {
+            actions = `<button class="secondary" onclick="confirmDirectorChange(${item.id})">Record CIPC confirmation</button>`;
+          }
+          return `<div class="company-row"><strong>Case #${item.id}</strong> · ${esc(item.change_type)} · ${esc(item.status)}${actions}</div>`;
+        }).join('')
+      : '<div class="company-row">No director change cases prepared.</div>';
+  } catch (error) {
+    blockers.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function prepareDirectorReplacement() {
+  const output = document.getElementById('companyDirectorOutput');
+  try {
+    const outgoingId = Number(document.getElementById('companyOutgoingDirector').value || 0);
+    const incomingFirst = fieldValue('companyIncomingFirst');
+    if (!outgoingId) throw new Error('Select the outgoing director.');
+    if (!incomingFirst) throw new Error('Incoming director first name is required.');
+
+    const incomingLast = fieldValue('companyIncomingLast');
+    const task = await api('/agent/tasks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title:`Prepare director replacement for ${incomingFirst} ${incomingLast || ''}`.trim(),
+        module:'company',
+        action_type:'prepare_director_change',
+        organization_id:1,
+        priority:'High',
+        description:'Prepare an internal director replacement case. This does not file anything with CIPC.',
+        payload:{
+          change_type:'Replacement',
+          outgoing_director_id:outgoingId,
+          incoming_first_name:incomingFirst,
+          incoming_last_name:incomingLast,
+          incoming_role:'Director',
+          resolution_date:fieldValue('companyResolutionDate'),
+          resolution_reference:fieldValue('companyResolutionRef'),
+          notes:fieldValue('companyDirectorNotes')
+        }
+      })
+    });
+    output.textContent = JSON.stringify(task,null,2);
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function prepareCompanyRecord() {
+  const output = document.getElementById('companyRecordOutput');
+  try {
+    const type = document.getElementById('companyRecordType').value;
+    const period = fieldValue('companyReportingPeriod');
+    const dueDate = fieldValue('companyDueDate');
+    if (!period) throw new Error('Reporting period is required.');
+
+    let actionType, title, payload;
+    if (type === 'annual_return') {
+      actionType = 'record_regulatory_filing';
+      title = `Track CIPC Annual Return ${period}`;
+      payload = {
+        regulator:'CIPC',
+        filing_type:'Annual Return',
+        reporting_period:period,
+        due_date:dueDate,
+        status:'Pending'
+      };
+    } else if (type === 'bo') {
+      actionType = 'record_beneficial_ownership';
+      title = `Track Beneficial Ownership ${period}`;
+      payload = {
+        reporting_period:period,
+        status:'Draft',
+        security_register_status:'To Verify'
+      };
+    } else if (type === 'financial') {
+      actionType = 'record_company_financial_filing';
+      title = `Track CIPC financial filing ${period}`;
+      payload = {
+        reporting_period:period,
+        filing_basis:document.getElementById('companyFinancialBasis').value,
+        due_date:dueDate,
+        status:'Draft'
+      };
+    } else {
+      actionType = 'prepare_dsd_annual_report';
+      title = `Prepare DSD annual report ${period}`;
+      payload = {
+        reporting_period:period,
+        due_date:dueDate,
+        narrative_status:'Missing',
+        financial_statement_status:'Missing',
+        accounting_officer_report_status:'Missing',
+        status:'Draft'
+      };
+    }
+
+    const task = await api('/agent/tasks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title,
+        module:'company',
+        action_type:actionType,
+        organization_id:1,
+        priority:'High',
+        payload
+      })
+    });
+    output.textContent = JSON.stringify(task,null,2);
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function markDirectorChangeReady(id) {
+  try {
+    const confirmed = window.confirm('Mark this internal case ready to file? This does not submit anything to CIPC.');
+    if (!confirmed) return;
+    await api(`/company/director-changes/${id}/ready`, {method:'POST'});
+    await loadCompanyDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function markDirectorChangeFiled(id) {
+  try {
+    const filedDate = window.prompt('CIPC filing date (YYYY-MM-DD):');
+    if (!filedDate) return;
+    const reference = window.prompt('CIPC filing/reference number:');
+    if (!reference) return;
+    await api(`/company/director-changes/${id}/filed`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({filed_date:filedDate,cipc_reference:reference})
+    });
+    await loadCompanyDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function confirmDirectorChange(id) {
+  try {
+    const confirmedDate = window.prompt('CIPC confirmation date (YYYY-MM-DD):');
+    if (!confirmedDate) return;
+    const effectiveDate = window.prompt('Effective date confirmed by CIPC (YYYY-MM-DD):');
+    if (!effectiveDate) return;
+    const reference = window.prompt('CIPC confirmation/reference number (leave blank to reuse filing reference):');
+    const approved = window.confirm('Only continue if you have actual CIPC confirmation. This will update the verified director register in FAOS.');
+    if (!approved) return;
+    await api(`/company/director-changes/${id}/confirm`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        confirmed_date:confirmedDate,
+        effective_date:effectiveDate,
+        cipc_reference:reference || null
+      })
+    });
+    await loadCompanyDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
 async function loadTeams() {
   const select = document.getElementById('intakeTeam');
   try {
@@ -477,7 +689,7 @@ async function loadQueue() {
   catch (error) { output.textContent = error.message; }
 }
 
-loadHealth(); loadSummary(); loadAgentQueue(); loadTeams(); loadIntakeReadiness();
+loadHealth(); loadSummary(); loadAgentQueue(); loadTeams(); loadIntakeReadiness(); loadCompanyDashboard();
 </script>
 </body>
 </html>
