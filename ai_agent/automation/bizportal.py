@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timezone
 from typing import Iterable
 
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError, sync_playwright
+from playwright.sync_api import Frame, Page, TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 from ai_agent.faos.company_models import (
     ExternalPortalWorkflow,
@@ -89,22 +89,39 @@ def _navigate(page: Page, url: str, *, label: str) -> bool:
     return True
 
 
+def _page_targets(page: Page) -> list[Page | Frame]:
+    """Search the main document plus child frames used by legacy CIPC pages."""
+    targets: list[Page | Frame] = [page]
+    for frame in page.frames:
+        if frame == page.main_frame:
+            continue
+        targets.append(frame)
+    return targets
+
+
 def _click_first_text(page: Page, labels: Iterable[str]) -> bool:
     for label in labels:
         pattern = re.compile(re.escape(label), re.IGNORECASE)
-        candidates = [
-            page.get_by_role("link", name=pattern),
-            page.get_by_role("button", name=pattern),
-            page.get_by_text(pattern),
-        ]
-        for candidate in candidates:
-            try:
-                if candidate.count() and candidate.first.is_visible():
-                    candidate.first.click()
-                    page.wait_for_load_state("domcontentloaded")
-                    return True
-            except Exception:
-                continue
+        for target in _page_targets(page):
+            candidates = [
+                target.get_by_role("link", name=pattern),
+                target.get_by_role("button", name=pattern),
+                target.get_by_text(pattern),
+            ]
+            for candidate in candidates:
+                try:
+                    count = candidate.count()
+                    for index in range(min(count, 8)):
+                        item = candidate.nth(index)
+                        if item.is_visible():
+                            item.click()
+                            try:
+                                page.wait_for_load_state("domcontentloaded", timeout=20000)
+                            except PlaywrightTimeoutError:
+                                pass
+                            return True
+                except Exception:
+                    continue
     return False
 
 
@@ -262,6 +279,19 @@ def _open_eservices_reinstatement(page: Page, db, workflow) -> bool:
     except Exception:
         pass
 
+    # Current CIPC More Services page groups reinstatement under the Business
+    # Registration card. Some layouts expose the child link immediately; others
+    # require the category heading/card to be selected first.
+    business_registration = _click_first_text(
+        page,
+        ("Business Registration", "BUSINESS REGISTRATION"),
+    )
+    if business_registration:
+        try:
+            page.wait_for_timeout(800)
+        except Exception:
+            pass
+
     opened = _click_first_text(
         page,
         (
@@ -314,13 +344,14 @@ def _fill_registration_number(page: Page, registration_number: str) -> bool:
         "Company",
     )
     for label in labels:
-        try:
-            field = page.get_by_label(re.compile(label, re.IGNORECASE))
-            if field.count() and field.first.is_visible():
-                field.first.fill(registration_number)
-                return True
-        except Exception:
-            continue
+        for target in _page_targets(page):
+            try:
+                field = target.get_by_label(re.compile(label, re.IGNORECASE))
+                if field.count() and field.first.is_visible():
+                    field.first.fill(registration_number)
+                    return True
+            except Exception:
+                continue
 
     selectors = (
         "input[placeholder*='Enterprise' i]",
@@ -334,38 +365,40 @@ def _fill_registration_number(page: Page, registration_number: str) -> bool:
         "input[id*='company' i]",
     )
     for selector in selectors:
+        for target in _page_targets(page):
+            try:
+                field = target.locator(selector)
+                if field.count() and field.first.is_visible():
+                    field.first.fill(registration_number)
+                    return True
+            except Exception:
+                continue
+
+    for target in _page_targets(page):
         try:
-            field = page.locator(selector)
-            if field.count() and field.first.is_visible():
-                field.first.fill(registration_number)
+            fields = target.locator("input[type='text']:visible")
+            for index in range(fields.count()):
+                field = fields.nth(index)
+                surrounding = ""
+                try:
+                    surrounding = field.evaluate(
+                        """el => [
+                            el.getAttribute('placeholder') || '',
+                            el.getAttribute('name') || '',
+                            el.getAttribute('id') || '',
+                            el.parentElement ? el.parentElement.innerText : ''
+                        ].join(' ')"""
+                    )
+                except Exception:
+                    pass
+                if re.search(r"enterprise|registration|company", surrounding, re.IGNORECASE):
+                    field.fill(registration_number)
+                    return True
+            if fields.count() == 1:
+                fields.first.fill(registration_number)
                 return True
         except Exception:
             continue
-
-    try:
-        fields = page.locator("input[type='text']:visible")
-        for index in range(fields.count()):
-            field = fields.nth(index)
-            surrounding = ""
-            try:
-                surrounding = field.evaluate(
-                    """el => [
-                        el.getAttribute('placeholder') || '',
-                        el.getAttribute('name') || '',
-                        el.getAttribute('id') || '',
-                        el.parentElement ? el.parentElement.innerText : ''
-                    ].join(' ')"""
-                )
-            except Exception:
-                pass
-            if re.search(r"enterprise|registration|company", surrounding, re.IGNORECASE):
-                field.fill(registration_number)
-                return True
-        if fields.count() == 1:
-            fields.first.fill(registration_number)
-            return True
-    except Exception:
-        pass
     return False
 
 
