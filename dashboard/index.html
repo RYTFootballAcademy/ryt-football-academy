@@ -40,6 +40,9 @@
     .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .form-grid label { margin-top:0; }
     .readiness-item { background:#0e1728; border-radius:8px; padding:9px; margin-top:8px; font-size:12px; }
+    .company-blocker { background:#2a1720; border:1px solid #5b2636; border-radius:8px; padding:9px; margin-top:7px; font-size:12px; }
+    .company-ok { background:#10251b; border:1px solid #24543b; border-radius:8px; padding:9px; margin-top:7px; font-size:12px; }
+    .company-row { background:#0e1728; border-radius:8px; padding:9px; margin-top:7px; font-size:12px; }
     @media (max-width:760px) { .wide { grid-column:span 1; } .form-grid { grid-template-columns:1fr; } }
     pre { white-space:pre-wrap; word-break:break-word; background:#0b1220; color:#d8e4f5; border-radius:8px; padding:10px; min-height:44px; overflow:auto; }
     .gold { color:var(--gold); }
@@ -81,6 +84,50 @@
       <button class="secondary" onclick="loadAgentQueue()">Refresh queue</button>
       <div id="agentQueue"></div>
       <pre id="agentOutput">No action prepared yet.</pre>
+    </section>
+
+    <section class="card wide">
+      <h2>Company Governance & Compliance</h2>
+      <div id="companyMetrics" class="metric-grid"></div>
+      <button class="secondary" onclick="loadCompanyDashboard()">Refresh company status</button>
+      <div id="companyBlockers"></div>
+      <div id="companyDirectors"></div>
+      <div id="companyChanges"></div>
+    </section>
+
+    <section class="card">
+      <h2>Prepare Director Replacement</h2>
+      <label>Outgoing director<select id="companyOutgoingDirector"><option value="">Select director</option></select></label>
+      <label>Incoming first name<input id="companyIncomingFirst" placeholder="First name"></label>
+      <label>Incoming last name<input id="companyIncomingLast" placeholder="Last name"></label>
+      <label>Resolution date<input id="companyResolutionDate" type="date"></label>
+      <label>Resolution reference<input id="companyResolutionRef" placeholder="e.g. Board Resolution 2026-01"></label>
+      <label>Notes<textarea id="companyDirectorNotes" placeholder="Internal notes"></textarea></label>
+      <button onclick="prepareDirectorReplacement()">Prepare for approval</button>
+      <pre id="companyDirectorOutput">No director change prepared yet.</pre>
+    </section>
+
+    <section class="card">
+      <h2>Prepare Compliance Record</h2>
+      <label>Record type
+        <select id="companyRecordType">
+          <option value="annual_return">CIPC Annual Return</option>
+          <option value="bo">Beneficial Ownership</option>
+          <option value="financial">CIPC AFS/FAS</option>
+          <option value="dsd">DSD Annual Report</option>
+        </select>
+      </label>
+      <label>Reporting period<input id="companyReportingPeriod" placeholder="e.g. 2026 or FY ended 2025-10-31"></label>
+      <label>Due date<input id="companyDueDate" type="date"></label>
+      <label>AFS/FAS basis
+        <select id="companyFinancialBasis">
+          <option>To Verify</option>
+          <option>AFS</option>
+          <option>FAS</option>
+        </select>
+      </label>
+      <button onclick="prepareCompanyRecord()">Prepare for approval</button>
+      <pre id="companyRecordOutput">No compliance record prepared yet.</pre>
     </section>
 
     <section class="card wide">
