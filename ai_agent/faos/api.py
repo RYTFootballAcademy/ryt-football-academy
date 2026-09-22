@@ -23,7 +23,13 @@ from ai_agent.faos import npo_models as _npo_models  # noqa: F401
 
 router = APIRouter(prefix="/faos", tags=["FAOS Admin"])
 
-INTERNAL_RESOURCES = {"agent_tasks"}
+INTERNAL_RESOURCES = {
+    "agent_tasks",
+    "beneficial_ownership_filings",
+    "company_financial_filings",
+    "director_change_cases",
+    "dsd_annual_reports",
+}
 
 
 def _require_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
