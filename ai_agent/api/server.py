@@ -20,6 +20,7 @@ from ai_agent.crm.intake import router as intake_router
 from ai_agent.faos.api import router as faos_router
 from ai_agent.faos.company_api import router as company_router
 from ai_agent.faos.portal_api import router as portal_router
+from ai_agent.faos.portal_api import router as portal_router
 from ai_agent.modules.database import engine, init_db
 from ai_agent.modules.funding_finder import FundingFinder
 from ai_agent.modules.npo_compliance import NPOComplianceTracker
@@ -63,6 +64,7 @@ app.include_router(crm_router)
 app.include_router(intake_router)
 app.include_router(faos_router)
 app.include_router(company_router)
+app.include_router(portal_router)
 app.include_router(portal_router)
 app.include_router(agent_action_router)
 
