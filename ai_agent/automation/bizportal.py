@@ -23,6 +23,8 @@ from ai_agent.modules.database import SessionLocal, init_db
 BIZPORTAL_LOGIN = "https://www.bizportal.gov.za/login.aspx"
 BIZPORTAL_SERVICES = "https://www.bizportal.gov.za/services.aspx"
 BIZPORTAL_BIZPROFILE = "https://www.bizportal.gov.za/bizprofile.aspx"
+ESERVICES_LOGIN = "https://eservices.cipc.co.za/Login.aspx"
+ESERVICES_HOME = "https://eservices.cipc.co.za/"
 
 SERVICE_LABELS = {
     "cipc_reinstatement": ("Reinstatement", "Re-instatement"),
@@ -103,6 +105,174 @@ def _click_first_text(page: Page, labels: Iterable[str]) -> bool:
                     return True
             except Exception:
                 continue
+    return False
+
+
+def _discover_and_open_reinstatement(page: Page) -> bool:
+    """Find a reinstatement transaction even when it is not a normal text tile."""
+    keywords = re.compile(r"re[-\s]?instat", re.IGNORECASE)
+
+    # First inspect anchors, including controls whose visible text is empty but
+    # whose href/title/aria-label contains the transaction name.
+    try:
+        anchors = page.locator("a[href]")
+        for index in range(anchors.count()):
+            anchor = anchors.nth(index)
+            try:
+                text_value = anchor.inner_text(timeout=500).strip()
+            except Exception:
+                text_value = ""
+            href = anchor.get_attribute("href") or ""
+            title = anchor.get_attribute("title") or ""
+            aria = anchor.get_attribute("aria-label") or ""
+            candidate = " ".join((text_value, href, title, aria))
+            if not keywords.search(candidate):
+                continue
+            try:
+                if anchor.is_visible():
+                    anchor.click()
+                    try:
+                        page.wait_for_load_state("domcontentloaded", timeout=20000)
+                    except PlaywrightTimeoutError:
+                        pass
+                    return True
+            except Exception:
+                pass
+
+            # Hidden/navigation links can still disclose the legitimate target.
+            # Navigate only to same-site/relative HTTP(S) targets containing the
+            # reinstatement keyword; never execute javascript: URLs.
+            if href and not href.lower().startswith("javascript:"):
+                try:
+                    target = page.url.split("/", 3)[:3]
+                    origin = "/".join(target)
+                    if href.startswith("/"):
+                        url = origin + href
+                    elif href.lower().startswith(("http://", "https://")):
+                        url = href
+                    else:
+                        base = page.url.rsplit("/", 1)[0]
+                        url = base + "/" + href.lstrip("./")
+                    if keywords.search(url):
+                        _navigate(page, url, label="CIPC reinstatement transaction")
+                        return True
+                except Exception:
+                    pass
+
+    except Exception:
+        pass
+
+    # Then inspect buttons and input controls by their rendered/value metadata.
+    selectors = ("button", "input[type='button']", "input[type='submit']")
+    for selector in selectors:
+        try:
+            controls = page.locator(selector)
+            for index in range(controls.count()):
+                control = controls.nth(index)
+                fields = []
+                for attr in ("value", "title", "aria-label", "name", "id"):
+                    fields.append(control.get_attribute(attr) or "")
+                try:
+                    fields.append(control.inner_text(timeout=500))
+                except Exception:
+                    pass
+                if not keywords.search(" ".join(fields)):
+                    continue
+                try:
+                    if control.is_visible():
+                        control.click()
+                        try:
+                            page.wait_for_load_state("domcontentloaded", timeout=20000)
+                        except PlaywrightTimeoutError:
+                            pass
+                        return True
+                except Exception:
+                    continue
+        except Exception:
+            continue
+    return False
+
+
+def _open_eservices_reinstatement(page: Page, db, workflow) -> bool:
+    """Fallback to the CIPC e-Services transaction portal."""
+    _set_state(db, workflow, "Waiting for User", "CIPC e-Services login", page.url)
+    _navigate(page, ESERVICES_LOGIN, label="CIPC e-Services login")
+    _event(
+        db,
+        workflow,
+        "eservices_fallback",
+        "BizPortal did not expose a reinstatement transaction; switched to CIPC e-Services.",
+        page.url,
+    )
+    print()
+    print("FAOS switched to CIPC e-Services because BizPortal did not expose the")
+    print("reinstatement transaction.")
+    print("Complete the e-Services login directly in the browser.")
+    print("Use your own CIPC customer code/password and security code if requested.")
+    input("When e-Services shows that you are logged in, return here and press ENTER...")
+
+    _set_state(db, workflow, "Running", "Opening e-Services transaction menu", page.url)
+
+    # Prefer the authenticated TRANSACT control because direct deep links may
+    # depend on session state.
+    opened_transact = _click_first_text(
+        page,
+        ("TRANSACT", "Transact", "Transactions", "Services"),
+    )
+    if not opened_transact:
+        _navigate(page, ESERVICES_HOME, label="CIPC e-Services home")
+        opened_transact = _click_first_text(
+            page,
+            ("TRANSACT", "Transact", "Transactions", "Services"),
+        )
+
+    try:
+        page.wait_for_timeout(1000)
+    except Exception:
+        pass
+
+    if _discover_and_open_reinstatement(page):
+        _event(
+            db,
+            workflow,
+            "service_opened",
+            "Opened the reinstatement transaction through CIPC e-Services.",
+            page.url,
+        )
+        return True
+
+    # Some menus load service tiles only after a postback; try the ordinary
+    # accessible-text route once more after Transact.
+    if _click_first_text(
+        page,
+        (
+            "Application for Re-instatement",
+            "Application for Reinstatement",
+            "Re-instatement",
+            "Reinstatement",
+            "Reinstate",
+        ),
+    ):
+        _event(
+            db,
+            workflow,
+            "service_opened",
+            "Opened the reinstatement transaction through CIPC e-Services.",
+            page.url,
+        )
+        return True
+
+    _set_state(
+        db,
+        workflow,
+        "Waiting for User",
+        "Locate reinstatement in e-Services",
+        page.url,
+    )
+    print()
+    print("FAOS is logged into e-Services but still cannot safely identify the")
+    print("reinstatement control. Do not choose Annual Returns or Director Amendments.")
+    print("Leave the browser on the transaction menu and return to CMD.")
     return False
 
 
@@ -323,32 +493,42 @@ def run_workflow(workflow_id: int) -> int:
                     ),
                 )
                 if not clicked:
-                    _set_state(
-                        db,
-                        workflow,
-                        "Waiting for User",
-                        "Open reinstatement action from BizProfile",
-                        page.url,
-                    )
-                    print()
-                    print(
-                        "FAOS found BizProfile but could not safely identify the "
-                        "reinstatement action."
-                    )
-                    print(
-                        "If the enterprise profile is displayed, use only the "
-                        "Reinstatement/Re-instatement action for this workflow. "
-                        "Do not file annual returns or director changes yet."
-                    )
-                    input("Press ENTER only when the reinstatement application page is open...")
-                else:
+                    clicked = _discover_and_open_reinstatement(page)
+
+                if clicked:
                     _event(
                         db,
                         workflow,
                         "service_opened",
-                        "Opened the reinstatement action from BizProfile.",
+                        "Opened the reinstatement action from BizPortal/BizProfile.",
                         page.url,
                     )
+                else:
+                    clicked = _open_eservices_reinstatement(page, db, workflow)
+
+                if not clicked:
+                    print()
+                    print(
+                        "Reinstatement has not been opened. Stop here rather than "
+                        "entering an unrelated CIPC transaction."
+                    )
+                    input(
+                        "Press ENTER to pause this workflow and close the controlled browser..."
+                    )
+                    workflow.status = "Paused"
+                    workflow.current_step = "Reinstatement transaction not located"
+                    workflow.updated_at = utc_now()
+                    db.commit()
+                    _event(
+                        db,
+                        workflow,
+                        "paused",
+                        "Neither BizPortal nor e-Services exposed a safely identifiable reinstatement control.",
+                        page.url,
+                    )
+                    browser.close()
+                    db.close()
+                    return 0
             else:
                 _set_state(db, workflow, "Running", "Opening BizPortal services", page.url)
                 services_loaded = _navigate(
