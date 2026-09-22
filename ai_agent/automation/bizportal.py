@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timezone
 from typing import Iterable
 
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 from ai_agent.faos.company_models import (
     ExternalPortalWorkflow,
@@ -59,6 +59,31 @@ def _set_state(db, workflow, status: str, step: str, page_url: str | None = None
     if page_url:
         workflow.last_url = page_url
     db.commit()
+
+
+def _navigate(page: Page, url: str, *, label: str) -> bool:
+    """Navigate without treating a slow government page as a fatal error.
+
+    BizPortal can take well over 30 seconds to finish DOMContentLoaded. We wait
+    for the navigation to commit, then give the DOM a shorter best-effort wait.
+    If even the commit times out, keep the visible browser open so the user can
+    finish the navigation manually rather than losing the whole workflow.
+    """
+    try:
+        page.goto(url, wait_until="commit", timeout=90000)
+    except PlaywrightTimeoutError:
+        print()
+        print(f"{label} is taking unusually long to respond.")
+        print("The browser will remain open. If the page is usable there, continue in it.")
+        return False
+
+    try:
+        page.wait_for_load_state("domcontentloaded", timeout=20000)
+    except PlaywrightTimeoutError:
+        # The ASP.NET page may continue loading scripts/resources while already
+        # being interactive enough for the user or the next automation step.
+        pass
+    return True
 
 
 def _click_first_text(page: Page, labels: Iterable[str]) -> bool:
@@ -162,7 +187,25 @@ def run_workflow(workflow_id: int) -> int:
             context = browser.new_context(accept_downloads=True)
             page = context.new_page()
 
-            page.goto(BIZPORTAL_LOGIN, wait_until="domcontentloaded")
+            login_loaded = _navigate(page, BIZPORTAL_LOGIN, label="BizPortal login")
+            if not login_loaded:
+                _set_state(
+                    db,
+                    workflow,
+                    "Waiting for User",
+                    "Open BizPortal login manually",
+                    page.url,
+                )
+                _event(
+                    db,
+                    workflow,
+                    "navigation_slow",
+                    "Automatic navigation to BizPortal login timed out; visible-browser fallback activated.",
+                    page.url,
+                )
+                print()
+                print("If the BizPortal login page did not appear, open it in the visible browser:")
+                print(BIZPORTAL_LOGIN)
             _set_state(db, workflow, "Waiting for User", "CIPC login", page.url)
             _event(
                 db,
@@ -178,7 +221,30 @@ def run_workflow(workflow_id: int) -> int:
             )
 
             _set_state(db, workflow, "Running", "Opening BizPortal services", page.url)
-            page.goto(BIZPORTAL_SERVICES, wait_until="domcontentloaded")
+            services_loaded = _navigate(
+                page,
+                BIZPORTAL_SERVICES,
+                label="BizPortal services page",
+            )
+            if not services_loaded:
+                _set_state(
+                    db,
+                    workflow,
+                    "Waiting for User",
+                    "Open BizPortal services manually",
+                    page.url,
+                )
+                _event(
+                    db,
+                    workflow,
+                    "navigation_slow",
+                    "Automatic navigation to BizPortal services timed out; visible-browser fallback activated.",
+                    page.url,
+                )
+                print()
+                print("Open the BizPortal services page in the visible browser if needed:")
+                print(BIZPORTAL_SERVICES)
+                input("Press ENTER when the services page is open...")
 
             clicked = _click_first_text(page, labels)
             if not clicked:
