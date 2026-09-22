@@ -29,6 +29,8 @@ INTERNAL_RESOURCES = {
     "company_financial_filings",
     "director_change_cases",
     "dsd_annual_reports",
+    "external_portal_workflows",
+    "external_portal_workflow_events",
 }
 
 
