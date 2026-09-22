@@ -369,3 +369,200 @@ def test_bulk_player_intake_reuses_guardian(client: TestClient):
     assert payload["created_count"] == 2
     assert payload["error_count"] == 0
     assert payload["created"][0]["parent_id"] == payload["created"][1]["parent_id"]
+
+
+def test_company_compliance_and_director_change_workflow(client: TestClient):
+    profile = client.post(
+        "/faos/npo_regulatory_profiles",
+        json={
+            "organization_id": 1,
+            "legal_name": "Test Legal Entity",
+            "trading_name": "RYT Test",
+            "cipc_registration_number": "K2021000000",
+            "incorporation_date": "2021-10-25",
+            "financial_year_end": "31 October",
+        },
+    )
+    assert profile.status_code in (201, 400), profile.text
+
+    outgoing = client.post(
+        "/faos/directors",
+        json={
+            "organization_id": 1,
+            "first_name": "Historical",
+            "last_name": "Director",
+            "role": "Director",
+            "status": "Historical - current status unverified",
+        },
+    )
+    assert outgoing.status_code == 201, outgoing.text
+    outgoing_id = outgoing.json()["id"]
+
+    history = client.post(
+        "/faos/director_appointment_history",
+        json={
+            "organization_id": 1,
+            "director_id": outgoing_id,
+            "appointment_date": "2021-10-25",
+            "appointment_source": "CIPC COR 14.1A",
+            "status": "Historical - current status unverified",
+        },
+    )
+    assert history.status_code == 201, history.text
+
+    prepared = client.post(
+        "/agent/tasks",
+        json={
+            "title": "Prepare director replacement",
+            "module": "company",
+            "action_type": "prepare_director_change",
+            "organization_id": 1,
+            "priority": "High",
+            "payload": {
+                "change_type": "Replacement",
+                "outgoing_director_id": outgoing_id,
+                "incoming_first_name": "New",
+                "incoming_last_name": "Director",
+                "incoming_role": "Director",
+                "resolution_date": "2026-09-22",
+                "resolution_reference": "Board Resolution TEST-01",
+            },
+        },
+    )
+    assert prepared.status_code == 201, prepared.text
+    approved = client.post(
+        f"/agent/tasks/{prepared.json()['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert approved.status_code == 200, approved.text
+    assert approved.json()["status"] == "Completed"
+    case_id = approved.json()["result"]["record_id"]
+
+    hidden = client.get("/faos/director_change_cases")
+    assert hidden.status_code == 404
+
+    ready = client.post(f"/company/director-changes/{case_id}/ready")
+    assert ready.status_code == 200, ready.text
+    assert ready.json()["status"] == "Ready to File"
+
+    filed = client.post(
+        f"/company/director-changes/{case_id}/filed",
+        json={"filed_date": "2026-09-22", "cipc_reference": "CIPC-TEST-001"},
+    )
+    assert filed.status_code == 200, filed.text
+    assert filed.json()["status"] == "Filed - Awaiting CIPC Confirmation"
+
+    confirmed = client.post(
+        f"/company/director-changes/{case_id}/confirm",
+        json={
+            "confirmed_date": "2026-09-23",
+            "effective_date": "2026-09-23",
+            "cipc_reference": "CIPC-TEST-001",
+        },
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    assert confirmed.json()["status"] == "Confirmed"
+    assert confirmed.json()["incoming_director_id"] is not None
+
+    directors = client.get("/faos/directors")
+    assert directors.status_code == 200
+    old = next(item for item in directors.json() if item["id"] == outgoing_id)
+    new = next(
+        item
+        for item in directors.json()
+        if item["id"] == confirmed.json()["incoming_director_id"]
+    )
+    assert "Historical" in old["status"]
+    assert new["status"] == "Active - CIPC verified"
+
+    annual = client.post(
+        "/agent/tasks",
+        json={
+            "title": "Track CIPC Annual Return 2026",
+            "module": "company",
+            "action_type": "record_regulatory_filing",
+            "organization_id": 1,
+            "payload": {
+                "regulator": "CIPC",
+                "filing_type": "Annual Return",
+                "reporting_period": "2026",
+                "status": "Pending",
+            },
+        },
+    )
+    assert annual.status_code == 201
+    annual_done = client.post(
+        f"/agent/tasks/{annual.json()['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert annual_done.status_code == 200
+    assert annual_done.json()["result"]["resource"] == "regulatory_filings"
+
+    bo = client.post(
+        "/agent/tasks",
+        json={
+            "title": "Track beneficial ownership 2026",
+            "module": "company",
+            "action_type": "record_beneficial_ownership",
+            "organization_id": 1,
+            "payload": {"reporting_period": "2026", "status": "Draft"},
+        },
+    )
+    assert bo.status_code == 201
+    bo_done = client.post(
+        f"/agent/tasks/{bo.json()['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert bo_done.status_code == 200
+    assert bo_done.json()["result"]["resource"] == "beneficial_ownership_filings"
+
+    financial = client.post(
+        "/agent/tasks",
+        json={
+            "title": "Track FAS 2026",
+            "module": "company",
+            "action_type": "record_company_financial_filing",
+            "organization_id": 1,
+            "payload": {
+                "reporting_period": "2026",
+                "filing_basis": "FAS",
+                "status": "Draft",
+            },
+        },
+    )
+    assert financial.status_code == 201
+    financial_done = client.post(
+        f"/agent/tasks/{financial.json()['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert financial_done.status_code == 200
+
+    dsd = client.post(
+        "/agent/tasks",
+        json={
+            "title": "Prepare DSD annual report 2025",
+            "module": "company",
+            "action_type": "prepare_dsd_annual_report",
+            "organization_id": 1,
+            "payload": {
+                "reporting_period": "FY ended 2025-10-31",
+                "due_date": "2026-07-31",
+            },
+        },
+    )
+    assert dsd.status_code == 201
+    dsd_done = client.post(
+        f"/agent/tasks/{dsd.json()['id']}/approve",
+        json={"approved_by": "Founder"},
+    )
+    assert dsd_done.status_code == 200
+    assert dsd_done.json()["result"]["resource"] == "dsd_annual_reports"
+
+    dashboard = client.get("/company/dashboard?organization_id=1")
+    assert dashboard.status_code == 200, dashboard.text
+    data = dashboard.json()
+    assert len(data["cipc_annual_returns"]) >= 1
+    assert len(data["beneficial_ownership"]) >= 1
+    assert len(data["company_financial_filings"]) >= 1
+    assert len(data["dsd_annual_reports"]) >= 1
+    assert len(data["director_changes"]) >= 1
