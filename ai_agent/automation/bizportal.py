@@ -228,11 +228,34 @@ def _open_eservices_reinstatement(page: Page, db, workflow) -> bool:
         page,
         ("More Services", "MORE SERVICES", "More services"),
     )
+
     if not more_services:
-        # Some authenticated dashboards expose the service catalogue without an
-        # intermediate More Services tile.
+        # On some e-Services sessions the HOME dashboard only shows customer
+        # information/entity search. The service catalogue (including MORE
+        # SERVICES) is exposed after clicking TRANSACT.
+        opened_transact = _click_first_text(
+            page,
+            ("TRANSACT", "Transact", "Transactions"),
+        )
+        if opened_transact:
+            try:
+                page.wait_for_timeout(1000)
+            except Exception:
+                pass
+            more_services = _click_first_text(
+                page,
+                ("More Services", "MORE SERVICES", "More services"),
+            )
+
+    if not more_services:
         print()
-        print("FAOS could not identify the More Services control; checking the current page for the reinstatement service.")
+        print(
+            "FAOS could not identify More Services on either the HOME dashboard "
+            "or the TRANSACT service grid."
+        )
+        print(
+            "It will now inspect the current page directly for the reinstatement service."
+        )
 
     try:
         page.wait_for_timeout(1000)
