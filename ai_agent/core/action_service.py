@@ -23,6 +23,12 @@ from ai_agent.crm.models import (
     Sponsor,
 )
 from ai_agent.faos.models import Director, GeneratedReport
+from ai_agent.faos.company_models import (
+    BeneficialOwnershipFiling,
+    CompanyFinancialFiling,
+    DirectorChangeCase,
+    DSDAnnualReport,
+)
 from ai_agent.faos.npo_models import NPORegulatoryProfile, RegulatoryFiling
 
 
@@ -33,6 +39,11 @@ EXECUTABLE_ACTIONS = {
     "prepare_parent_message",
     "generate_management_report",
     "manual_review",
+    "prepare_director_change",
+    "record_regulatory_filing",
+    "record_beneficial_ownership",
+    "record_company_financial_filing",
+    "prepare_dsd_annual_report",
 }
 
 NPO_EDITABLE_FIELDS = {
@@ -358,6 +369,131 @@ def execute_task(db: Session, task: AgentTask) -> AgentTask:
                 "resource": "generated_reports",
                 "record_id": record.id,
                 "snapshot": snapshot,
+            }
+
+        elif task.action_type == "prepare_director_change":
+            change_type = str(payload.get("change_type") or "").strip()
+            if change_type not in {"Appointment", "Resignation", "Removal", "Replacement"}:
+                raise ValueError("Unsupported director change type")
+            outgoing_id = payload.get("outgoing_director_id")
+            if change_type in {"Resignation", "Removal", "Replacement"} and outgoing_id is None:
+                raise ValueError("Outgoing director is required")
+            if outgoing_id is not None and db.get(Director, int(outgoing_id)) is None:
+                raise ValueError(f"Outgoing director {outgoing_id} not found")
+            incoming_first = str(payload.get("incoming_first_name") or "").strip()
+            if change_type in {"Appointment", "Replacement"} and not incoming_first:
+                raise ValueError("Incoming director first name is required")
+            record = DirectorChangeCase(
+                organization_id=task.organization_id or 1,
+                change_type=change_type,
+                outgoing_director_id=int(outgoing_id) if outgoing_id is not None else None,
+                incoming_first_name=incoming_first or None,
+                incoming_last_name=(str(payload.get("incoming_last_name") or "").strip() or None),
+                incoming_role=payload.get("incoming_role") or "Director",
+                meeting_date=payload.get("meeting_date"),
+                resolution_date=payload.get("resolution_date"),
+                resolution_reference=payload.get("resolution_reference"),
+                notes=payload.get("notes") or task.description,
+                status="Draft",
+            )
+            db.add(record)
+            db.flush()
+            result = {
+                "resource": "director_change_cases",
+                "record_id": record.id,
+                "status": "Draft",
+                "external_filing": False,
+            }
+
+        elif task.action_type == "record_regulatory_filing":
+            regulator = str(payload.get("regulator") or "").strip()
+            filing_type = str(payload.get("filing_type") or "").strip()
+            if not regulator or not filing_type:
+                raise ValueError("Regulator and filing_type are required")
+            record = RegulatoryFiling(
+                organization_id=task.organization_id or 1,
+                regulator=regulator,
+                filing_type=filing_type,
+                reporting_period=payload.get("reporting_period"),
+                due_date=payload.get("due_date"),
+                filed_date=payload.get("filed_date"),
+                status=payload.get("status") or "Pending",
+                reference=payload.get("reference"),
+                notes=payload.get("notes") or task.description,
+            )
+            db.add(record)
+            db.flush()
+            result = {"resource": "regulatory_filings", "record_id": record.id}
+
+        elif task.action_type == "record_beneficial_ownership":
+            record = BeneficialOwnershipFiling(
+                organization_id=task.organization_id or 1,
+                reporting_period=payload.get("reporting_period"),
+                declaration_date=payload.get("declaration_date"),
+                status=payload.get("status") or "Draft",
+                reference=payload.get("reference"),
+                security_register_status=payload.get("security_register_status"),
+                notes=payload.get("notes") or task.description,
+            )
+            db.add(record)
+            db.flush()
+            result = {
+                "resource": "beneficial_ownership_filings",
+                "record_id": record.id,
+            }
+
+        elif task.action_type == "record_company_financial_filing":
+            record = CompanyFinancialFiling(
+                organization_id=task.organization_id or 1,
+                reporting_period=payload.get("reporting_period"),
+                filing_basis=payload.get("filing_basis") or "To Verify",
+                due_date=payload.get("due_date"),
+                filed_date=payload.get("filed_date"),
+                status=payload.get("status") or "Draft",
+                reference=payload.get("reference"),
+                notes=payload.get("notes") or task.description,
+            )
+            db.add(record)
+            db.flush()
+            result = {
+                "resource": "company_financial_filings",
+                "record_id": record.id,
+            }
+
+        elif task.action_type == "prepare_dsd_annual_report":
+            reporting_period = str(payload.get("reporting_period") or "").strip()
+            if not reporting_period:
+                raise ValueError("DSD reporting period is required")
+            existing = (
+                db.query(DSDAnnualReport)
+                .filter(
+                    DSDAnnualReport.organization_id == (task.organization_id or 1),
+                    DSDAnnualReport.reporting_period == reporting_period,
+                )
+                .first()
+            )
+            if existing is not None:
+                raise ValueError("DSD annual-report period already exists")
+            record = DSDAnnualReport(
+                organization_id=task.organization_id or 1,
+                reporting_period=reporting_period,
+                due_date=payload.get("due_date"),
+                narrative_status=payload.get("narrative_status") or "Missing",
+                financial_statement_status=payload.get("financial_statement_status") or "Missing",
+                accounting_officer_report_status=payload.get("accounting_officer_report_status") or "Missing",
+                bank_statement_status=payload.get("bank_statement_status"),
+                affidavit_status=payload.get("affidavit_status"),
+                submitted_date=payload.get("submitted_date"),
+                status=payload.get("status") or "Draft",
+                reference=payload.get("reference"),
+                notes=payload.get("notes") or task.description,
+            )
+            db.add(record)
+            db.flush()
+            result = {
+                "resource": "dsd_annual_reports",
+                "record_id": record.id,
+                "status": record.status,
             }
 
         elif task.action_type == "manual_review":
