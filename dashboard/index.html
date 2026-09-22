@@ -96,6 +96,24 @@
     </section>
 
     <section class="card">
+      <h2>CIPC Portal Agent</h2>
+      <p style="color:var(--muted);font-size:12px">Prepares a controlled browser workflow. You enter login, OTP/security answers and payment details only in the CIPC browser.</p>
+      <label>Workflow
+        <select id="portalWorkflowType">
+          <option value="cipc_reinstatement">CIPC Reinstatement</option>
+          <option value="cipc_annual_return">CIPC Annual Return</option>
+          <option value="cipc_beneficial_ownership">Beneficial Ownership</option>
+          <option value="cipc_director_change">Director Change</option>
+          <option value="information_regulator">Information Regulator</option>
+        </select>
+      </label>
+      <button onclick="preparePortalWorkflow()">Prepare portal agent</button>
+      <button class="secondary" onclick="loadPortalWorkflows()">Refresh workflows</button>
+      <pre id="portalAgentOutput">No portal workflow prepared yet.</pre>
+      <div id="portalWorkflowList"></div>
+    </section>
+
+    <section class="card">
       <h2>Prepare Director Replacement</h2>
       <label>Outgoing director<select id="companyOutgoingDirector"><option value="">Select director</option></select></label>
       <label>Incoming first name<input id="companyIncomingFirst" placeholder="First name"></label>
@@ -354,6 +372,47 @@ async function rejectAgentTask(id) {
     await loadAgentQueue();
   } catch (error) {
     output.textContent = error.message;
+  }
+}
+
+async function preparePortalWorkflow() {
+  const output = document.getElementById('portalAgentOutput');
+  try {
+    const workflowType = document.getElementById('portalWorkflowType').value;
+    const data = await api('/portal/workflows', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        organization_id:1,
+        workflow_type:workflowType
+      })
+    });
+    output.textContent =
+      'Workflow prepared. Run this command in CMD:\n\n' +
+      data.launch_command +
+      '\n\n' +
+      data.security;
+    await loadPortalWorkflows();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function loadPortalWorkflows() {
+  const target = document.getElementById('portalWorkflowList');
+  try {
+    const data = await api('/portal/workflows?organization_id=1&limit=8');
+    target.innerHTML = data.length
+      ? data.map(item => `
+          <div class="company-row">
+            <strong>#${item.id} · ${esc(item.workflow_type)}</strong>
+            <div>${esc(item.status)} · ${esc(item.current_step || '')}</div>
+            <div>${item.external_reference ? 'Reference: ' + esc(item.external_reference) : 'No regulator reference recorded yet.'}</div>
+          </div>
+        `).join('')
+      : '<div class="company-row">No portal workflows prepared.</div>';
+  } catch (error) {
+    target.innerHTML = `<pre>${esc(error.message)}</pre>`;
   }
 }
 
@@ -689,7 +748,7 @@ async function loadQueue() {
   catch (error) { output.textContent = error.message; }
 }
 
-loadHealth(); loadSummary(); loadAgentQueue(); loadTeams(); loadIntakeReadiness(); loadCompanyDashboard();
+loadHealth(); loadSummary(); loadAgentQueue(); loadTeams(); loadIntakeReadiness(); loadCompanyDashboard(); loadPortalWorkflows();
 </script>
 </body>
 </html>
