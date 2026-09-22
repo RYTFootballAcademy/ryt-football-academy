@@ -211,53 +211,55 @@ def _open_eservices_reinstatement(page: Page, db, workflow) -> bool:
     print("Use your own CIPC customer code/password and security code if requested.")
     input("When e-Services shows that you are logged in, return here and press ENTER...")
 
-    _set_state(db, workflow, "Running", "Opening e-Services transaction menu", page.url)
+    _set_state(db, workflow, "Running", "Opening e-Services reinstatement service", page.url)
 
-    # Prefer the authenticated TRANSACT control because direct deep links may
-    # depend on session state.
-    opened_transact = _click_first_text(
-        page,
-        ("TRANSACT", "Transact", "Transactions", "Services"),
-    )
-    if not opened_transact:
+    # Current CIPC reinstatement guide:
+    # HOME -> More Services -> Business Registration ->
+    # Company and Close Corporation Reinstatements.
+    if not _click_first_text(page, ("HOME", "Home")):
         _navigate(page, ESERVICES_HOME, label="CIPC e-Services home")
-        opened_transact = _click_first_text(
-            page,
-            ("TRANSACT", "Transact", "Transactions", "Services"),
-        )
+
+    try:
+        page.wait_for_timeout(800)
+    except Exception:
+        pass
+
+    more_services = _click_first_text(
+        page,
+        ("More Services", "MORE SERVICES", "More services"),
+    )
+    if not more_services:
+        # Some authenticated dashboards expose the service catalogue without an
+        # intermediate More Services tile.
+        print()
+        print("FAOS could not identify the More Services control; checking the current page for the reinstatement service.")
 
     try:
         page.wait_for_timeout(1000)
     except Exception:
         pass
 
-    if _discover_and_open_reinstatement(page):
-        _event(
-            db,
-            workflow,
-            "service_opened",
-            "Opened the reinstatement transaction through CIPC e-Services.",
-            page.url,
-        )
-        return True
-
-    # Some menus load service tiles only after a postback; try the ordinary
-    # accessible-text route once more after Transact.
-    if _click_first_text(
+    opened = _click_first_text(
         page,
         (
-            "Application for Re-instatement",
-            "Application for Reinstatement",
-            "Re-instatement",
-            "Reinstatement",
-            "Reinstate",
+            "Company and Close Corporation Reinstatements",
+            "Company & Close Corporation Reinstatements",
+            "Company and Close Corporation Re-instatements",
+            "Company & Close Corporation Re-instatements",
         ),
-    ):
+    )
+
+    if not opened:
+        # Inspect links/buttons/metadata for alternate hyphenation or hidden
+        # service-card anchors.
+        opened = _discover_and_open_reinstatement(page)
+
+    if opened:
         _event(
             db,
             workflow,
             "service_opened",
-            "Opened the reinstatement transaction through CIPC e-Services.",
+            "Opened Company and Close Corporation Reinstatements through CIPC e-Services.",
             page.url,
         )
         return True
@@ -266,13 +268,16 @@ def _open_eservices_reinstatement(page: Page, db, workflow) -> bool:
         db,
         workflow,
         "Waiting for User",
-        "Locate reinstatement in e-Services",
+        "Locate Company and Close Corporation Reinstatements",
         page.url,
     )
     print()
-    print("FAOS is logged into e-Services but still cannot safely identify the")
-    print("reinstatement control. Do not choose Annual Returns or Director Amendments.")
-    print("Leave the browser on the transaction menu and return to CMD.")
+    print("FAOS is logged into e-Services but could not safely identify the current")
+    print("reinstatement service card.")
+    print("According to the current CIPC guide, use this exact path:")
+    print("HOME > More Services > Business Registration >")
+    print("Company and Close Corporation Reinstatements")
+    print("Do not choose Annual Returns or Director Amendments.")
     return False
 
 
