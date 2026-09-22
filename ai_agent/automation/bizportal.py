@@ -17,7 +17,7 @@ from ai_agent.faos.company_models import (
     ExternalPortalWorkflow,
     ExternalPortalWorkflowEvent,
 )
-from ai_agent.modules.database import SessionLocal
+from ai_agent.modules.database import SessionLocal, init_db
 
 
 BIZPORTAL_LOGIN = "https://www.bizportal.gov.za/login.aspx"
@@ -119,6 +119,10 @@ def _extract_reference(text: str) -> str | None:
 
 
 def run_workflow(workflow_id: int) -> int:
+    # Standalone scripts do not pass through FastAPI lifespan startup. Load every
+    # mapped FAOS model and apply additive schema creation before opening the
+    # session so cross-model foreign keys (for example organizations.id) resolve.
+    init_db()
     db = SessionLocal()
     workflow = db.get(ExternalPortalWorkflow, workflow_id)
     if workflow is None:
