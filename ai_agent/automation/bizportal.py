@@ -22,6 +22,7 @@ from ai_agent.modules.database import SessionLocal, init_db
 
 BIZPORTAL_LOGIN = "https://www.bizportal.gov.za/login.aspx"
 BIZPORTAL_SERVICES = "https://www.bizportal.gov.za/services.aspx"
+BIZPORTAL_BIZPROFILE = "https://www.bizportal.gov.za/bizprofile.aspx"
 
 SERVICE_LABELS = {
     "cipc_reinstatement": ("Reinstatement", "Re-instatement"),
@@ -111,6 +112,8 @@ def _fill_registration_number(page: Page, registration_number: str) -> bool:
         "Registration Number",
         "Company Number",
         "Enterprise No",
+        "Enterprise",
+        "Company",
     )
     for label in labels:
         try:
@@ -121,8 +124,45 @@ def _fill_registration_number(page: Page, registration_number: str) -> bool:
         except Exception:
             continue
 
+    selectors = (
+        "input[placeholder*='Enterprise' i]",
+        "input[placeholder*='Registration' i]",
+        "input[placeholder*='Company' i]",
+        "input[name*='enterprise' i]",
+        "input[id*='enterprise' i]",
+        "input[name*='registration' i]",
+        "input[id*='registration' i]",
+        "input[name*='company' i]",
+        "input[id*='company' i]",
+    )
+    for selector in selectors:
+        try:
+            field = page.locator(selector)
+            if field.count() and field.first.is_visible():
+                field.first.fill(registration_number)
+                return True
+        except Exception:
+            continue
+
     try:
         fields = page.locator("input[type='text']:visible")
+        for index in range(fields.count()):
+            field = fields.nth(index)
+            surrounding = ""
+            try:
+                surrounding = field.evaluate(
+                    """el => [
+                        el.getAttribute('placeholder') || '',
+                        el.getAttribute('name') || '',
+                        el.getAttribute('id') || '',
+                        el.parentElement ? el.parentElement.innerText : ''
+                    ].join(' ')"""
+                )
+            except Exception:
+                pass
+            if re.search(r"enterprise|registration|company", surrounding, re.IGNORECASE):
+                field.fill(registration_number)
+                return True
         if fields.count() == 1:
             fields.first.fill(registration_number)
             return True
@@ -220,84 +260,170 @@ def run_workflow(workflow_id: int) -> int:
                 "When you are logged in, return here and press ENTER..."
             )
 
-            _set_state(db, workflow, "Running", "Opening BizPortal services", page.url)
-            services_loaded = _navigate(
-                page,
-                BIZPORTAL_SERVICES,
-                label="BizPortal services page",
-            )
-            if not services_loaded:
-                _set_state(
-                    db,
-                    workflow,
-                    "Waiting for User",
-                    "Open BizPortal services manually",
-                    page.url,
+            if workflow.workflow_type == "cipc_reinstatement":
+                _set_state(db, workflow, "Running", "Opening BizProfile", page.url)
+                profile_loaded = _navigate(
+                    page,
+                    BIZPORTAL_BIZPROFILE,
+                    label="BizProfile",
                 )
-                _event(
-                    db,
-                    workflow,
-                    "navigation_slow",
-                    "Automatic navigation to BizPortal services timed out; visible-browser fallback activated.",
-                    page.url,
-                )
-                print()
-                print("Open the BizPortal services page in the visible browser if needed:")
-                print(BIZPORTAL_SERVICES)
-                input("Press ENTER when the services page is open...")
-
-            clicked = _click_first_text(page, labels)
-            if not clicked:
-                _set_state(
-                    db,
-                    workflow,
-                    "Waiting for User",
-                    "Navigate to requested service",
-                    page.url,
-                )
-                print()
-                print(
-                    "FAOS could not safely identify the service button on this version "
-                    "of BizPortal."
-                )
-                print(
-                    "Navigate in the visible browser to the relevant service, then "
-                    "return here."
-                )
-                input("Press ENTER when the service page is open...")
-            else:
-                _event(
-                    db,
-                    workflow,
-                    "service_opened",
-                    f"Opened BizPortal service matching: {', '.join(labels)}",
-                    page.url,
-                )
-
-            if workflow.registration_number:
-                filled = _fill_registration_number(page, workflow.registration_number)
-                if filled:
-                    _event(
-                        db,
-                        workflow,
-                        "registration_number_filled",
-                        "Enterprise registration number was entered by FAOS.",
-                        page.url,
-                    )
-                    _click_first_text(page, ("Search", "Continue", "Next", "Proceed"))
-                else:
+                if not profile_loaded:
                     _set_state(
                         db,
                         workflow,
                         "Waiting for User",
-                        "Enter enterprise number",
+                        "Open BizProfile manually",
                         page.url,
                     )
-                    print(
-                        "FAOS could not safely identify the enterprise-number field. "
-                        "Enter it in the browser yourself."
+                    print()
+                    print("Open BizProfile in the visible browser:")
+                    print(BIZPORTAL_BIZPROFILE)
+                    input("Press ENTER when BizProfile is open...")
+
+                if workflow.registration_number:
+                    filled = _fill_registration_number(page, workflow.registration_number)
+                    if filled:
+                        _event(
+                            db,
+                            workflow,
+                            "registration_number_filled",
+                            "Enterprise registration number was entered in BizProfile by FAOS.",
+                            page.url,
+                        )
+                        _click_first_text(
+                            page,
+                            ("Search", "Continue", "View", "Lookup", "Proceed"),
+                        )
+                        try:
+                            page.wait_for_timeout(1500)
+                        except Exception:
+                            pass
+                    else:
+                        _set_state(
+                            db,
+                            workflow,
+                            "Waiting for User",
+                            "Enter enterprise number in BizProfile",
+                            page.url,
+                        )
+                        print(
+                            "FAOS could not safely identify the BizProfile enterprise field. "
+                            "Enter the enterprise number in the visible browser."
+                        )
+                        input("Press ENTER after the enterprise profile is displayed...")
+
+                clicked = _click_first_text(
+                    page,
+                    (
+                        "Apply for Reinstatement",
+                        "Apply for Re-instatement",
+                        "Reinstatement",
+                        "Re-instatement",
+                        "Reinstate",
+                    ),
+                )
+                if not clicked:
+                    _set_state(
+                        db,
+                        workflow,
+                        "Waiting for User",
+                        "Open reinstatement action from BizProfile",
+                        page.url,
                     )
-                    input("Press ENTER after the enterprise is selected...")
+                    print()
+                    print(
+                        "FAOS found BizProfile but could not safely identify the "
+                        "reinstatement action."
+                    )
+                    print(
+                        "If the enterprise profile is displayed, use only the "
+                        "Reinstatement/Re-instatement action for this workflow. "
+                        "Do not file annual returns or director changes yet."
+                    )
+                    input("Press ENTER only when the reinstatement application page is open...")
+                else:
+                    _event(
+                        db,
+                        workflow,
+                        "service_opened",
+                        "Opened the reinstatement action from BizProfile.",
+                        page.url,
+                    )
+            else:
+                _set_state(db, workflow, "Running", "Opening BizPortal services", page.url)
+                services_loaded = _navigate(
+                    page,
+                    BIZPORTAL_SERVICES,
+                    label="BizPortal services page",
+                )
+                if not services_loaded:
+                    _set_state(
+                        db,
+                        workflow,
+                        "Waiting for User",
+                        "Open BizPortal services manually",
+                        page.url,
+                    )
+                    _event(
+                        db,
+                        workflow,
+                        "navigation_slow",
+                        "Automatic navigation to BizPortal services timed out; visible-browser fallback activated.",
+                        page.url,
+                    )
+                    print()
+                    print("Open the BizPortal services page in the visible browser if needed:")
+                    print(BIZPORTAL_SERVICES)
+                    input("Press ENTER when the services page is open...")
+
+                clicked = _click_first_text(page, labels)
+                if not clicked:
+                    _set_state(
+                        db,
+                        workflow,
+                        "Waiting for User",
+                        "Navigate to requested service",
+                        page.url,
+                    )
+                    print()
+                    print(
+                        "FAOS could not safely identify the requested service on this "
+                        "version of BizPortal."
+                    )
+                    input("Press ENTER when the correct service page is open...")
+                else:
+                    _event(
+                        db,
+                        workflow,
+                        "service_opened",
+                        f"Opened BizPortal service matching: {', '.join(labels)}",
+                        page.url,
+                    )
+
+                if workflow.registration_number:
+                    filled = _fill_registration_number(page, workflow.registration_number)
+                    if filled:
+                        _event(
+                            db,
+                            workflow,
+                            "registration_number_filled",
+                            "Enterprise registration number was entered by FAOS.",
+                            page.url,
+                        )
+                        _click_first_text(page, ("Search", "Continue", "Next", "Proceed"))
+                    else:
+                        _set_state(
+                            db,
+                            workflow,
+                            "Waiting for User",
+                            "Enter enterprise number",
+                            page.url,
+                        )
+                        print(
+                            "FAOS could not safely identify the enterprise-number field. "
+                            "Enter it in the browser yourself."
+                        )
+                        input("Press ENTER after the enterprise is selected...")
 
             if workflow.workflow_type == "cipc_reinstatement":
                 _set_state(
