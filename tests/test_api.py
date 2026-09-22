@@ -566,3 +566,33 @@ def test_company_compliance_and_director_change_workflow(client: TestClient):
     assert len(data["company_financial_filings"]) >= 1
     assert len(data["dsd_annual_reports"]) >= 1
     assert len(data["director_changes"]) >= 1
+
+
+def test_external_portal_workflow_preparation(client: TestClient):
+    prepared = client.post(
+        "/portal/workflows",
+        json={
+            "organization_id": 1,
+            "workflow_type": "cipc_reinstatement",
+            "registration_number": "K2021957324",
+            "notes": "Test workflow; no external action.",
+        },
+    )
+    assert prepared.status_code == 201, prepared.text
+    payload = prepared.json()
+    assert payload["status"] == "Prepared"
+    assert payload["requires_user_login"] is True
+    assert payload["requires_user_approval"] is True
+    assert "bizportal_agent.py" in payload["launch_command"]
+    workflow_id = payload["id"]
+
+    hidden = client.get("/faos/external_portal_workflows")
+    assert hidden.status_code == 404
+
+    fetched = client.get(f"/portal/workflows/{workflow_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["workflow_type"] == "cipc_reinstatement"
+
+    events = client.get(f"/portal/workflows/{workflow_id}/events")
+    assert events.status_code == 200
+    assert any(item["event_type"] == "prepared" for item in events.json())
