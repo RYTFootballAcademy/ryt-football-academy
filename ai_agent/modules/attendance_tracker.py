@@ -1,23 +1,35 @@
+"""Attendance helper backed by the canonical CRM Attendance model."""
+
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
-from ai_agent.modules.database import Base
 
-class Attendance(Base):
-    __tablename__ = "attendance"
+from ai_agent.crm.models import Attendance
 
-    id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("players.id"))
-    date = Column(Date)
-    session_type = Column(String)  # Training / Match
-    status = Column(String)        # Present / Absent
 
 class AttendanceTracker:
-    def record_attendance(self, db: Session, player_id: int, date, session_type: str, status: str):
-        record = Attendance(player_id=player_id, date=date, session_type=session_type, status=status)
+    def record_attendance(
+        self,
+        db: Session,
+        player_id: int,
+        date,
+        session_type: str,
+        status: str,
+    ):
+        date_value = date.isoformat() if hasattr(date, "isoformat") else str(date)
+        record = Attendance(
+            player_id=player_id,
+            date=date_value,
+            session_type=session_type,
+            status=status,
+        )
         db.add(record)
         db.commit()
         db.refresh(record)
         return record
 
     def get_player_attendance(self, db: Session, player_id: int):
-        return db.query(Attendance).filter(Attendance.player_id == player_id).all()
+        return (
+            db.query(Attendance)
+            .filter(Attendance.player_id == player_id)
+            .order_by(Attendance.id.desc())
+            .all()
+        )

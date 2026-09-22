@@ -1,137 +1,754 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>RYT Football Academy Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background: #1e293b;
-            padding: 20px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            padding: 20px;
-        }
-        .card {
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 10px;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 8px;
-            border-radius: 6px;
-            border: none;
-        }
-        button {
-            background: #22c55e;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #16a34a;
-        }
-        pre {
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 6px;
-            overflow-x: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RYT Sports Academy · FAOS</title>
+  <style>
+    :root { --blue:#0057D9; --gold:#D4AF37; --ink:#0f172a; --panel:#172033; --text:#e8eef8; --muted:#9fb0c8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Segoe UI,Arial,sans-serif; background:var(--ink); color:var(--text); }
+    header { padding:22px clamp(18px,4vw,48px); background:linear-gradient(135deg,#0b1b3a,var(--blue)); border-bottom:2px solid var(--gold); }
+    header h1 { margin:0 0 5px; font-size:clamp(22px,3vw,34px); }
+    header p { margin:0; color:#dbe7ff; }
+    nav { display:flex; gap:12px; flex-wrap:wrap; margin-top:15px; }
+    nav a { color:white; text-decoration:none; border:1px solid rgba(255,255,255,.35); padding:8px 12px; border-radius:8px; }
+    main { padding:22px clamp(18px,4vw,48px) 50px; }
+    .status { display:flex; gap:12px; align-items:center; margin-bottom:18px; color:var(--muted); }
+    .dot { width:10px; height:10px; border-radius:50%; background:#64748b; }
+    .dot.ok { background:#22c55e; box-shadow:0 0 12px #22c55e; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+    .card { background:var(--panel); border:1px solid #26334a; border-radius:14px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.16); }
+    .card h2 { margin:0 0 12px; font-size:18px; }
+    .metric-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .metric { background:#0e1728; border-radius:10px; padding:12px; }
+    .metric strong { display:block; font-size:24px; color:white; }
+    .metric span { color:var(--muted); font-size:12px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-top:10px; }
+    input, textarea, select, button { width:100%; border-radius:8px; border:1px solid #334155; padding:10px 11px; margin-top:5px; font:inherit; }
+    input, textarea, select { background:#0e1728; color:white; }
+    textarea { min-height:84px; resize:vertical; }
+    button { background:var(--blue); color:white; border:none; cursor:pointer; font-weight:700; margin-top:12px; }
+    button:hover { filter:brightness(1.08); }
+    .secondary { background:#26334a; }
+    .danger { background:#8b1e2d; }
+    .task { background:#0e1728; border:1px solid #334155; border-radius:10px; padding:12px; margin-top:10px; }
+    .task h3 { margin:0 0 6px; font-size:14px; }
+    .task p { margin:4px 0; color:var(--muted); font-size:12px; }
+    .task-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .wide { grid-column:span 2; }
+    .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .form-grid label { margin-top:0; }
+    .readiness-item { background:#0e1728; border-radius:8px; padding:9px; margin-top:8px; font-size:12px; }
+    .company-blocker { background:#2a1720; border:1px solid #5b2636; border-radius:8px; padding:9px; margin-top:7px; font-size:12px; }
+    .company-ok { background:#10251b; border:1px solid #24543b; border-radius:8px; padding:9px; margin-top:7px; font-size:12px; }
+    .company-row { background:#0e1728; border-radius:8px; padding:9px; margin-top:7px; font-size:12px; }
+    @media (max-width:760px) { .wide { grid-column:span 1; } .form-grid { grid-template-columns:1fr; } }
+    pre { white-space:pre-wrap; word-break:break-word; background:#0b1220; color:#d8e4f5; border-radius:8px; padding:10px; min-height:44px; overflow:auto; }
+    .gold { color:var(--gold); }
+    footer { color:var(--muted); margin-top:24px; font-size:12px; }
+  </style>
 </head>
 <body>
-
 <header>
-    RYT Football Academy Dashboard
+  <h1>RYT Sports Academy <span class="gold">FAOS</span></h1>
+  <p>Football Academy Operating System · operations, development, finance, sponsorship and governance</p>
+  <nav>
+    <a href="/docs" target="_blank">API Docs</a>
+    <a href="/redoc" target="_blank">ReDoc</a>
+    <a href="/faos/resources" target="_blank">FAOS Resources</a>
+  </nav>
 </header>
+<main>
+  <div class="status"><span id="healthDot" class="dot"></span><span id="healthText">Checking system…</span></div>
+  <div class="grid">
+    <section class="card">
+      <h2>Academy snapshot</h2>
+      <div id="metrics" class="metric-grid"></div>
+      <button class="secondary" onclick="loadSummary()">Refresh</button>
+    </section>
 
-<div class="container">
+    <section class="card">
+      <h2>AI Action Queue</h2>
+      <div id="agentMetrics" class="metric-grid"></div>
+      <label>Instruction<textarea id="agentInstruction" placeholder="Create a compliance task to verify our CIPC status"></textarea></label>
+      <label>Priority
+        <select id="agentPriority">
+          <option>Normal</option>
+          <option>High</option>
+          <option>Urgent</option>
+          <option>Low</option>
+        </select>
+      </label>
+      <button onclick="prepareAgentAction()">Prepare for approval</button>
+      <button class="secondary" onclick="loadAgentQueue()">Refresh queue</button>
+      <div id="agentQueue"></div>
+      <pre id="agentOutput">No action prepared yet.</pre>
+    </section>
 
-    <div class="card">
-        <h3>AI Chat</h3>
-        <input id="chatInput" placeholder="Type request (e.g. need sponsors)" />
-        <button onclick="sendChat()">Send</button>
-        <pre id="chatOutput"></pre>
-    </div>
+    <section class="card wide">
+      <h2>Company Governance & Compliance</h2>
+      <div id="companyMetrics" class="metric-grid"></div>
+      <button class="secondary" onclick="loadCompanyDashboard()">Refresh company status</button>
+      <div id="companyBlockers"></div>
+      <div id="companyDirectors"></div>
+      <div id="companyChanges"></div>
+    </section>
 
-    <div class="card">
-        <h3>Add Sponsor Lead</h3>
-        <input id="sponsorName" placeholder="Sponsor Name" />
-        <input id="sponsorIndustry" placeholder="Industry" />
-        <button onclick="addSponsor()">Add Sponsor</button>
-        <pre id="sponsorOutput"></pre>
-    </div>
+    <section class="card">
+      <h2>CIPC Portal Agent</h2>
+      <p style="color:var(--muted);font-size:12px">Prepares a controlled browser workflow. You enter login, OTP/security answers and payment details only in the CIPC browser.</p>
+      <label>Workflow
+        <select id="portalWorkflowType">
+          <option value="cipc_reinstatement">CIPC Reinstatement</option>
+          <option value="cipc_annual_return">CIPC Annual Return</option>
+          <option value="cipc_beneficial_ownership">Beneficial Ownership</option>
+          <option value="cipc_director_change">Director Change</option>
+          <option value="information_regulator">Information Regulator</option>
+        </select>
+      </label>
+      <button onclick="preparePortalWorkflow()">Prepare portal agent</button>
+      <button class="secondary" onclick="loadPortalWorkflows()">Refresh workflows</button>
+      <pre id="portalAgentOutput">No portal workflow prepared yet.</pre>
+      <div id="portalWorkflowList"></div>
+    </section>
 
-    <div class="card">
-        <h3>NPO Compliance</h3>
-        <button onclick="checkCompliance()">Check Status</button>
-        <pre id="npoOutput"></pre>
-    </div>
+    <section class="card">
+      <h2>Prepare Director Replacement</h2>
+      <label>Outgoing director<select id="companyOutgoingDirector"><option value="">Select director</option></select></label>
+      <label>Incoming first name<input id="companyIncomingFirst" placeholder="First name"></label>
+      <label>Incoming last name<input id="companyIncomingLast" placeholder="Last name"></label>
+      <label>Resolution date<input id="companyResolutionDate" type="date"></label>
+      <label>Resolution reference<input id="companyResolutionRef" placeholder="e.g. Board Resolution 2026-01"></label>
+      <label>Notes<textarea id="companyDirectorNotes" placeholder="Internal notes"></textarea></label>
+      <button onclick="prepareDirectorReplacement()">Prepare for approval</button>
+      <pre id="companyDirectorOutput">No director change prepared yet.</pre>
+    </section>
 
-    <div class="card">
-        <h3>WhatsApp Send</h3>
-        <input id="waNumber" placeholder="Recipient" />
-        <input id="waMessage" placeholder="Message" />
-        <button onclick="sendWhatsApp()">Send</button>
-        <pre id="waOutput"></pre>
-    </div>
+    <section class="card">
+      <h2>Prepare Compliance Record</h2>
+      <label>Record type
+        <select id="companyRecordType">
+          <option value="annual_return">CIPC Annual Return</option>
+          <option value="bo">Beneficial Ownership</option>
+          <option value="financial">CIPC AFS/FAS</option>
+          <option value="dsd">DSD Annual Report</option>
+        </select>
+      </label>
+      <label>Reporting period<input id="companyReportingPeriod" placeholder="e.g. 2026 or FY ended 2025-10-31"></label>
+      <label>Due date<input id="companyDueDate" type="date"></label>
+      <label>AFS/FAS basis
+        <select id="companyFinancialBasis">
+          <option>To Verify</option>
+          <option>AFS</option>
+          <option>FAS</option>
+        </select>
+      </label>
+      <button onclick="prepareCompanyRecord()">Prepare for approval</button>
+      <pre id="companyRecordOutput">No compliance record prepared yet.</pre>
+    </section>
 
-</div>
+    <section class="card wide">
+      <h2>Player & Guardian Intake</h2>
+      <div class="form-grid">
+        <label>Player full name<input id="intakePlayerName" placeholder="Player name"></label>
+        <label>Team<select id="intakeTeam"><option value="">Select team</option></select></label>
+        <label>Date of birth<input id="intakeDob" type="date"></label>
+        <label>Age<input id="intakeAge" type="number" min="0" max="100"></label>
+        <label>Position<input id="intakePosition" placeholder="Playing position"></label>
+        <label>School<input id="intakeSchool" placeholder="School"></label>
+        <label>Grade<input id="intakeGrade" placeholder="Grade"></label>
+        <label>Guardian name<input id="intakeGuardianName" placeholder="Parent or guardian"></label>
+        <label>Relationship<input id="intakeRelationship" placeholder="Relationship"></label>
+        <label>Guardian phone<input id="intakeGuardianPhone" placeholder="Phone number"></label>
+        <label>WhatsApp<input id="intakeGuardianWhatsapp" placeholder="WhatsApp number"></label>
+        <label>Guardian email<input id="intakeGuardianEmail" type="email" placeholder="Email"></label>
+        <label>Emergency contact name<input id="intakeEmergencyName" placeholder="Backup contact"></label>
+        <label>Emergency contact phone<input id="intakeEmergencyPhone" placeholder="Phone number"></label>
+        <label>Medical information confirmed
+          <select id="intakeMedicalConfirmed"><option value="false">No</option><option value="true">Yes</option></select>
+        </label>
+        <label>Registration form<select id="intakeRegistrationForm"><option>Missing</option><option>Pending</option><option>Received</option><option>Signed</option></select></label>
+        <label>Medical form<select id="intakeMedicalForm"><option>Missing</option><option>Pending</option><option>Received</option><option>Signed</option></select></label>
+        <label>Emergency form<select id="intakeEmergencyForm"><option>Missing</option><option>Pending</option><option>Received</option><option>Signed</option></select></label>
+        <label>Media consent<select id="intakeMediaConsent"><option>Missing</option><option>Pending</option><option>Received</option><option>Signed</option></select></label>
+        <label>Indemnity form<select id="intakeIndemnity"><option>Missing</option><option>Pending</option><option>Received</option><option>Signed</option></select></label>
+      </div>
+      <button onclick="createPlayerIntake()">Save player intake</button>
+      <button class="secondary" onclick="loadIntakeReadiness()">Check intake readiness</button>
+      <pre id="intakeOutput">Ready for the first player.</pre>
+      <div id="intakeReadiness"></div>
+    </section>
 
+    <section class="card wide">
+      <h2>Bulk Player Intake</h2>
+      <label>JSON records<textarea id="bulkIntakeJson" style="min-height:160px" placeholder="Paste a JSON array of intake records"></textarea></label>
+      <button onclick="submitBulkIntake()">Import records</button>
+      <pre id="bulkIntakeOutput">No bulk import run yet.</pre>
+    </section>
+
+    <section class="card">
+      <h2>Add sponsor lead</h2>
+      <label>Name<input id="sponsorName" placeholder="Business or organisation"></label>
+      <label>Industry<input id="sponsorIndustry" placeholder="Retail, mining, banking…"></label>
+      <label>Contact person<input id="sponsorContact" placeholder="Name"></label>
+      <label>Email<input id="sponsorEmail" type="email" placeholder="contact@example.com"></label>
+      <label>Phone<input id="sponsorPhone" placeholder="+27…"></label>
+      <button onclick="addSponsor()">Create sponsor</button>
+      <pre id="sponsorOutput">Ready.</pre>
+    </section>
+
+    <section class="card">
+      <h2>AI routing assistant</h2>
+      <label>Request<textarea id="chatInput" placeholder="We need sponsors for new kits"></textarea></label>
+      <button onclick="sendChat()">Route request</button>
+      <pre id="chatOutput">Ready.</pre>
+    </section>
+
+    <section class="card">
+      <h2>WhatsApp queue</h2>
+      <label>Recipient<input id="waNumber" placeholder="+27…"></label>
+      <label>Message<textarea id="waMessage" placeholder="Academy announcement"></textarea></label>
+      <button onclick="sendWhatsApp()">Queue message</button>
+      <button class="secondary" onclick="loadQueue()">Queue status</button>
+      <pre id="waOutput">No messages queued in this process yet.</pre>
+    </section>
+  </div>
+  <footer>FAOS v2 · Use Swagger at <strong>/docs</strong> for full CRM and administration endpoints.</footer>
+</main>
 <script>
-const API = "http://localhost:8000";
+const API = window.location.origin;
 
-async function sendChat() {
-    const message = document.getElementById("chatInput").value;
-    const res = await fetch(`${API}/chat`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message})
-    });
-    document.getElementById("chatOutput").textContent = JSON.stringify(await res.json(), null, 2);
+async function api(path, options={}) {
+  const response = await fetch(`${API}${path}`, options);
+  const text = await response.text();
+  let data = text;
+  try { data = text ? JSON.parse(text) : null; } catch (_) {}
+  if (!response.ok) throw new Error(typeof data === 'string' ? data : JSON.stringify(data));
+  return data;
+}
+
+async function loadHealth() {
+  try {
+    const data = await api('/health');
+    document.getElementById('healthDot').classList.add('ok');
+    document.getElementById('healthText').textContent = `${data.service} · ${data.version} · ${data.database}`;
+  } catch (error) {
+    document.getElementById('healthText').textContent = `API unavailable: ${error.message}`;
+  }
+}
+
+async function loadSummary() {
+  const target = document.getElementById('metrics');
+  try {
+    const data = await api('/crm/summary');
+    const priority = ['players','parents','coaches','sponsors','fees','trials','attendance','camps'];
+    target.innerHTML = priority.map(key => `<div class="metric"><strong>${data[key] ?? 0}</strong><span>${key.replaceAll('_',' ')}</span></div>`).join('');
+  } catch (error) { target.innerHTML = `<pre>${error.message}</pre>`; }
 }
 
 async function addSponsor() {
-    const name = document.getElementById("sponsorName").value;
-    const industry = document.getElementById("sponsorIndustry").value;
-    const res = await fetch(`${API}/sponsors/add`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({name, industry})
+  const output = document.getElementById('sponsorOutput');
+  try {
+    const data = await api('/crm/sponsors', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:document.getElementById('sponsorName').value,
+        industry:document.getElementById('sponsorIndustry').value || null,
+        contact_person:document.getElementById('sponsorContact').value || null,
+        email:document.getElementById('sponsorEmail').value || null,
+        phone:document.getElementById('sponsorPhone').value || null
+      })
     });
-    document.getElementById("sponsorOutput").textContent = JSON.stringify(await res.json(), null, 2);
+    output.textContent = JSON.stringify(data,null,2); loadSummary();
+  } catch (error) { output.textContent = error.message; }
 }
 
-async function checkCompliance() {
-    const res = await fetch(`${API}/npo/compliance`);
-    document.getElementById("npoOutput").textContent = JSON.stringify(await res.json(), null, 2);
+async function sendChat() {
+  const output = document.getElementById('chatOutput');
+  try {
+    const data = await api('/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:document.getElementById('chatInput').value})});
+    output.textContent = JSON.stringify(data,null,2);
+  } catch (error) { output.textContent = error.message; }
 }
 
 async function sendWhatsApp() {
-    const recipient = document.getElementById("waNumber").value;
-    const message = document.getElementById("waMessage").value;
-    const res = await fetch(`${API}/whatsapp/send`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({recipient, message})
-    });
-    document.getElementById("waOutput").textContent = JSON.stringify(await res.json(), null, 2);
+  const output = document.getElementById('waOutput');
+  try {
+    const data = await api('/whatsapp/send', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipient:document.getElementById('waNumber').value,message:document.getElementById('waMessage').value})});
+    output.textContent = JSON.stringify(data,null,2);
+  } catch (error) { output.textContent = error.message; }
 }
-</script>
 
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[ch]);
+}
+
+async function loadAgentQueue() {
+  const metrics = document.getElementById('agentMetrics');
+  const queue = document.getElementById('agentQueue');
+  try {
+    const [summary, tasks] = await Promise.all([
+      api('/agent/summary'),
+      api('/agent/tasks?status=Awaiting%20Approval')
+    ]);
+    metrics.innerHTML = [
+      ['Awaiting', summary.awaiting_approval],
+      ['Completed', summary.completed],
+      ['Rejected', summary.rejected],
+      ['Failed', summary.failed]
+    ].map(([label,value]) => `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join('');
+
+    if (!tasks.length) {
+      queue.innerHTML = '<p style="color:var(--muted);font-size:12px">No actions awaiting approval.</p>';
+      return;
+    }
+    queue.innerHTML = tasks.map(task => `
+      <div class="task">
+        <h3>${esc(task.title)}</h3>
+        <p><strong>${esc(task.module)}</strong> · ${esc(task.action_type)} · ${esc(task.priority)}</p>
+        <p>${esc(task.description || '')}</p>
+        <div class="task-actions">
+          <button onclick="approveAgentTask(${task.id})">Approve & execute</button>
+          <button class="danger" onclick="rejectAgentTask(${task.id})">Reject</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    queue.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function prepareAgentAction() {
+  const output = document.getElementById('agentOutput');
+  try {
+    const instruction = document.getElementById('agentInstruction').value.trim();
+    if (!instruction) throw new Error('Enter an instruction first.');
+    const data = await api('/agent/prepare', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        instruction,
+        organization_id:1,
+        priority:document.getElementById('agentPriority').value
+      })
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    document.getElementById('agentInstruction').value = '';
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function approveAgentTask(id) {
+  const output = document.getElementById('agentOutput');
+  try {
+    const data = await api(`/agent/tasks/${id}/approve`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({approved_by:'Founder'})
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadAgentQueue();
+    await loadSummary();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function rejectAgentTask(id) {
+  const output = document.getElementById('agentOutput');
+  try {
+    const reason = window.prompt('Reason for rejection (optional):') || null;
+    const data = await api(`/agent/tasks/${id}/reject`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({reason})
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function preparePortalWorkflow() {
+  const output = document.getElementById('portalAgentOutput');
+  try {
+    const workflowType = document.getElementById('portalWorkflowType').value;
+    const data = await api('/portal/workflows', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        organization_id:1,
+        workflow_type:workflowType
+      })
+    });
+    output.textContent =
+      'Workflow prepared. Run this command in CMD:\n\n' +
+      data.launch_command +
+      '\n\n' +
+      data.security;
+    await loadPortalWorkflows();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function loadPortalWorkflows() {
+  const target = document.getElementById('portalWorkflowList');
+  try {
+    const data = await api('/portal/workflows?organization_id=1&limit=8');
+    target.innerHTML = data.length
+      ? data.map(item => `
+          <div class="company-row">
+            <strong>#${item.id} · ${esc(item.workflow_type)}</strong>
+            <div>${esc(item.status)} · ${esc(item.current_step || '')}</div>
+            <div>${item.external_reference ? 'Reference: ' + esc(item.external_reference) : 'No regulator reference recorded yet.'}</div>
+          </div>
+        `).join('')
+      : '<div class="company-row">No portal workflows prepared.</div>';
+  } catch (error) {
+    target.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function loadCompanyDashboard() {
+  const metrics = document.getElementById('companyMetrics');
+  const blockers = document.getElementById('companyBlockers');
+  const directorsTarget = document.getElementById('companyDirectors');
+  const changesTarget = document.getElementById('companyChanges');
+  const directorSelect = document.getElementById('companyOutgoingDirector');
+  try {
+    const data = await api('/company/dashboard?organization_id=1');
+
+    const annualOpen = (data.cipc_annual_returns || []).filter(item => {
+      const status = String(item.status || '').toLowerCase();
+      return !['filed','submitted','complete','completed','confirmed','up to date'].includes(status);
+    }).length;
+
+    metrics.innerHTML = [
+      ['CIPC returns', (data.cipc_annual_returns || []).length],
+      ['Returns open', annualOpen],
+      ['Directors', (data.directors || []).length],
+      ['Blockers', (data.blockers || []).length]
+    ].map(([label,value]) => `<div class="metric"><strong>${value}</strong><span>${esc(label)}</span></div>`).join('');
+
+    blockers.innerHTML = (data.blockers || []).length
+      ? (data.blockers || []).map(item => `<div class="company-blocker">${esc(item)}</div>`).join('')
+      : '<div class="company-ok">No company-compliance blockers are currently recorded in FAOS.</div>';
+
+    const directors = data.directors || [];
+    directorsTarget.innerHTML = directors.length
+      ? '<h3 style="font-size:14px;margin:14px 0 6px">Director register</h3>' +
+        directors.map(item => `<div class="company-row"><strong>${esc([item.first_name,item.last_name].filter(Boolean).join(' '))}</strong> · ${esc(item.status || 'Unknown')}</div>`).join('')
+      : '<div class="company-row">No directors recorded.</div>';
+
+    directorSelect.innerHTML = '<option value="">Select director</option>' +
+      directors.map(item => `<option value="${item.id}">${esc([item.first_name,item.last_name].filter(Boolean).join(' '))} · ${esc(item.status || '')}</option>`).join('');
+
+    const changes = data.director_changes || [];
+    changesTarget.innerHTML = changes.length
+      ? '<h3 style="font-size:14px;margin:14px 0 6px">Director change cases</h3>' +
+        changes.map(item => {
+          let actions = '';
+          if (item.status === 'Draft') {
+            actions = `<button class="secondary" onclick="markDirectorChangeReady(${item.id})">Mark ready to file</button>`;
+          } else if (item.status === 'Ready to File') {
+            actions = `<button class="secondary" onclick="markDirectorChangeFiled(${item.id})">Record CIPC filing</button>`;
+          } else if (item.status === 'Filed - Awaiting CIPC Confirmation') {
+            actions = `<button class="secondary" onclick="confirmDirectorChange(${item.id})">Record CIPC confirmation</button>`;
+          }
+          return `<div class="company-row"><strong>Case #${item.id}</strong> · ${esc(item.change_type)} · ${esc(item.status)}${actions}</div>`;
+        }).join('')
+      : '<div class="company-row">No director change cases prepared.</div>';
+  } catch (error) {
+    blockers.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function prepareDirectorReplacement() {
+  const output = document.getElementById('companyDirectorOutput');
+  try {
+    const outgoingId = Number(document.getElementById('companyOutgoingDirector').value || 0);
+    const incomingFirst = fieldValue('companyIncomingFirst');
+    if (!outgoingId) throw new Error('Select the outgoing director.');
+    if (!incomingFirst) throw new Error('Incoming director first name is required.');
+
+    const incomingLast = fieldValue('companyIncomingLast');
+    const task = await api('/agent/tasks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title:`Prepare director replacement for ${incomingFirst} ${incomingLast || ''}`.trim(),
+        module:'company',
+        action_type:'prepare_director_change',
+        organization_id:1,
+        priority:'High',
+        description:'Prepare an internal director replacement case. This does not file anything with CIPC.',
+        payload:{
+          change_type:'Replacement',
+          outgoing_director_id:outgoingId,
+          incoming_first_name:incomingFirst,
+          incoming_last_name:incomingLast,
+          incoming_role:'Director',
+          resolution_date:fieldValue('companyResolutionDate'),
+          resolution_reference:fieldValue('companyResolutionRef'),
+          notes:fieldValue('companyDirectorNotes')
+        }
+      })
+    });
+    output.textContent = JSON.stringify(task,null,2);
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function prepareCompanyRecord() {
+  const output = document.getElementById('companyRecordOutput');
+  try {
+    const type = document.getElementById('companyRecordType').value;
+    const period = fieldValue('companyReportingPeriod');
+    const dueDate = fieldValue('companyDueDate');
+    if (!period) throw new Error('Reporting period is required.');
+
+    let actionType, title, payload;
+    if (type === 'annual_return') {
+      actionType = 'record_regulatory_filing';
+      title = `Track CIPC Annual Return ${period}`;
+      payload = {
+        regulator:'CIPC',
+        filing_type:'Annual Return',
+        reporting_period:period,
+        due_date:dueDate,
+        status:'Pending'
+      };
+    } else if (type === 'bo') {
+      actionType = 'record_beneficial_ownership';
+      title = `Track Beneficial Ownership ${period}`;
+      payload = {
+        reporting_period:period,
+        status:'Draft',
+        security_register_status:'To Verify'
+      };
+    } else if (type === 'financial') {
+      actionType = 'record_company_financial_filing';
+      title = `Track CIPC financial filing ${period}`;
+      payload = {
+        reporting_period:period,
+        filing_basis:document.getElementById('companyFinancialBasis').value,
+        due_date:dueDate,
+        status:'Draft'
+      };
+    } else {
+      actionType = 'prepare_dsd_annual_report';
+      title = `Prepare DSD annual report ${period}`;
+      payload = {
+        reporting_period:period,
+        due_date:dueDate,
+        narrative_status:'Missing',
+        financial_statement_status:'Missing',
+        accounting_officer_report_status:'Missing',
+        status:'Draft'
+      };
+    }
+
+    const task = await api('/agent/tasks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title,
+        module:'company',
+        action_type:actionType,
+        organization_id:1,
+        priority:'High',
+        payload
+      })
+    });
+    output.textContent = JSON.stringify(task,null,2);
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function markDirectorChangeReady(id) {
+  try {
+    const confirmed = window.confirm('Mark this internal case ready to file? This does not submit anything to CIPC.');
+    if (!confirmed) return;
+    await api(`/company/director-changes/${id}/ready`, {method:'POST'});
+    await loadCompanyDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function markDirectorChangeFiled(id) {
+  try {
+    const filedDate = window.prompt('CIPC filing date (YYYY-MM-DD):');
+    if (!filedDate) return;
+    const reference = window.prompt('CIPC filing/reference number:');
+    if (!reference) return;
+    await api(`/company/director-changes/${id}/filed`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({filed_date:filedDate,cipc_reference:reference})
+    });
+    await loadCompanyDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function confirmDirectorChange(id) {
+  try {
+    const confirmedDate = window.prompt('CIPC confirmation date (YYYY-MM-DD):');
+    if (!confirmedDate) return;
+    const effectiveDate = window.prompt('Effective date confirmed by CIPC (YYYY-MM-DD):');
+    if (!effectiveDate) return;
+    const reference = window.prompt('CIPC confirmation/reference number (leave blank to reuse filing reference):');
+    const approved = window.confirm('Only continue if you have actual CIPC confirmation. This will update the verified director register in FAOS.');
+    if (!approved) return;
+    await api(`/company/director-changes/${id}/confirm`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        confirmed_date:confirmedDate,
+        effective_date:effectiveDate,
+        cipc_reference:reference || null
+      })
+    });
+    await loadCompanyDashboard();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function loadTeams() {
+  const select = document.getElementById('intakeTeam');
+  try {
+    const teams = await api('/faos/teams');
+    const ordered = [...teams].sort((a,b) => (a.id ?? 0) - (b.id ?? 0));
+    select.innerHTML = '<option value="">Select team</option>' + ordered.map(team => {
+      const label = [team.name, team.age_group].filter(Boolean).join(' · ');
+      return `<option value="${team.id}">${esc(label || ('Team ' + team.id))}</option>`;
+    }).join('');
+  } catch (error) {
+    select.innerHTML = '<option value="">Unable to load teams</option>';
+  }
+}
+
+function fieldValue(id) {
+  const value = document.getElementById(id).value.trim();
+  return value || null;
+}
+
+async function createPlayerIntake() {
+  const output = document.getElementById('intakeOutput');
+  try {
+    const name = fieldValue('intakePlayerName');
+    if (!name) throw new Error('Player full name is required.');
+
+    const ageRaw = fieldValue('intakeAge');
+    const teamRaw = document.getElementById('intakeTeam').value;
+    const guardianName = fieldValue('intakeGuardianName');
+
+    const payload = {
+      organization_id: 1,
+      player: {
+        name,
+        dob: fieldValue('intakeDob'),
+        age: ageRaw ? Number(ageRaw) : null,
+        team_id: teamRaw ? Number(teamRaw) : null,
+        position: fieldValue('intakePosition'),
+        school: fieldValue('intakeSchool'),
+        grade: fieldValue('intakeGrade')
+      },
+      guardian: guardianName ? {
+        name: guardianName,
+        relationship_to_player: fieldValue('intakeRelationship'),
+        phone: fieldValue('intakeGuardianPhone'),
+        whatsapp: fieldValue('intakeGuardianWhatsapp'),
+        email: fieldValue('intakeGuardianEmail'),
+        emergency_contact_name: fieldValue('intakeEmergencyName'),
+        emergency_contact_phone: fieldValue('intakeEmergencyPhone')
+      } : null,
+      forms: {
+        registration_form_status: document.getElementById('intakeRegistrationForm').value,
+        medical_form_status: document.getElementById('intakeMedicalForm').value,
+        emergency_contact_form_status: document.getElementById('intakeEmergencyForm').value,
+        media_consent_status: document.getElementById('intakeMediaConsent').value,
+        indemnity_form_status: document.getElementById('intakeIndemnity').value,
+        medical_info_confirmed: document.getElementById('intakeMedicalConfirmed').value === 'true'
+      }
+    };
+
+    const data = await api('/crm/intake/player', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadSummary();
+    await loadIntakeReadiness();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function loadIntakeReadiness() {
+  const target = document.getElementById('intakeReadiness');
+  try {
+    const data = await api('/crm/intake/readiness?organization_id=1');
+    const header = `<div class="metric-grid" style="margin-top:10px">
+      <div class="metric"><strong>${data.players}</strong><span>Players</span></div>
+      <div class="metric"><strong>${data.incomplete}</strong><span>Incomplete intake</span></div>
+    </div>`;
+    const rows = data.records.map(item => `
+      <div class="readiness-item">
+        <strong>${esc(item.player_name)}</strong> · ${item.completeness_percent}% complete
+        <div>${item.missing.length ? 'Missing: ' + esc(item.missing.join(', ')) : 'Intake complete ✓'}</div>
+      </div>
+    `).join('');
+    target.innerHTML = header + rows;
+  } catch (error) {
+    target.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function submitBulkIntake() {
+  const output = document.getElementById('bulkIntakeOutput');
+  try {
+    const raw = document.getElementById('bulkIntakeJson').value.trim();
+    if (!raw) throw new Error('Paste the intake JSON first.');
+    const parsed = JSON.parse(raw);
+    const records = Array.isArray(parsed) ? parsed : parsed.records;
+    if (!Array.isArray(records) || !records.length) throw new Error('Provide a JSON array of intake records.');
+
+    const data = await api('/crm/intake/bulk', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({records})
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadSummary();
+    await loadIntakeReadiness();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function loadQueue() {
+  const output = document.getElementById('waOutput');
+  try { output.textContent = JSON.stringify(await api('/whatsapp/queue'),null,2); }
+  catch (error) { output.textContent = error.message; }
+}
+
+loadHealth(); loadSummary(); loadAgentQueue(); loadTeams(); loadIntakeReadiness(); loadCompanyDashboard(); loadPortalWorkflows();
+</script>
 </body>
 </html>

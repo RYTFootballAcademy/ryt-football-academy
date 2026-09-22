@@ -1,24 +1,31 @@
+"""Parent communication helper backed by the canonical CRM Message model."""
+
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from ai_agent.modules.database import Base
-import datetime
 
-class Message(Base):
-    __tablename__ = "messages"
+from ai_agent.crm.models import Message
 
-    id = Column(Integer, primary_key=True, index=True)
-    parent_id = Column(Integer, ForeignKey("parents.id"))
-    content = Column(String)
-    date_sent = Column(DateTime, default=datetime.datetime.utcnow)
-    status = Column(String, default="Sent")
 
 class ParentHub:
     def send_message(self, db: Session, parent_id: int, content: str):
-        msg = Message(parent_id=parent_id, content=content)
-        db.add(msg)
+        sent_at = datetime.now(timezone.utc).isoformat()
+        message = Message(
+            parent_id=parent_id,
+            content=content,
+            timestamp=sent_at,
+            date_sent=sent_at,
+            status="Sent",
+        )
+        db.add(message)
         db.commit()
-        db.refresh(msg)
-        return msg
+        db.refresh(message)
+        return message
 
     def get_messages(self, db: Session, parent_id: int):
-        return db.query(Message).filter(Message.parent_id == parent_id).all()
+        return (
+            db.query(Message)
+            .filter(Message.parent_id == parent_id)
+            .order_by(Message.id.desc())
+            .all()
+        )
