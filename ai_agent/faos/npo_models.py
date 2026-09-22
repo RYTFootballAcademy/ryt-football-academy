@@ -96,3 +96,25 @@ class GovernanceDocument(Base):
     file_path = Column(String, nullable=True)
     status = Column(String, default="Current")
     notes = Column(Text, nullable=True)
+
+
+class ExternalPortalAccount(Base):
+    """Non-secret metadata for regulator and service portal accounts.
+
+    Passwords, OTPs, recovery codes, security answers and other authentication
+    secrets are intentionally excluded from this model and must never be stored
+    in FAOS.
+    """
+
+    __tablename__ = "external_portal_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    service = Column(String, nullable=False)
+    portal_url = Column(String, nullable=True)
+    username_email = Column(String, nullable=True)
+    account_reference = Column(String, nullable=True)
+    status = Column(String, default="Unknown")
+    authentication_control = Column(String, default="User-controlled")
+    last_verified_login = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
