@@ -31,6 +31,11 @@
     button { background:var(--blue); color:white; border:none; cursor:pointer; font-weight:700; margin-top:12px; }
     button:hover { filter:brightness(1.08); }
     .secondary { background:#26334a; }
+    .danger { background:#8b1e2d; }
+    .task { background:#0e1728; border:1px solid #334155; border-radius:10px; padding:12px; margin-top:10px; }
+    .task h3 { margin:0 0 6px; font-size:14px; }
+    .task p { margin:4px 0; color:var(--muted); font-size:12px; }
+    .task-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     pre { white-space:pre-wrap; word-break:break-word; background:#0b1220; color:#d8e4f5; border-radius:8px; padding:10px; min-height:44px; overflow:auto; }
     .gold { color:var(--gold); }
     footer { color:var(--muted); margin-top:24px; font-size:12px; }
@@ -53,6 +58,24 @@
       <h2>Academy snapshot</h2>
       <div id="metrics" class="metric-grid"></div>
       <button class="secondary" onclick="loadSummary()">Refresh</button>
+    </section>
+
+    <section class="card">
+      <h2>AI Action Queue</h2>
+      <div id="agentMetrics" class="metric-grid"></div>
+      <label>Instruction<textarea id="agentInstruction" placeholder="Create a compliance task to verify our CIPC status"></textarea></label>
+      <label>Priority
+        <select id="agentPriority">
+          <option>Normal</option>
+          <option>High</option>
+          <option>Urgent</option>
+          <option>Low</option>
+        </select>
+      </label>
+      <button onclick="prepareAgentAction()">Prepare for approval</button>
+      <button class="secondary" onclick="loadAgentQueue()">Refresh queue</button>
+      <div id="agentQueue"></div>
+      <pre id="agentOutput">No action prepared yet.</pre>
     </section>
 
     <section class="card">
@@ -148,13 +171,108 @@ async function sendWhatsApp() {
   } catch (error) { output.textContent = error.message; }
 }
 
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[ch]);
+}
+
+async function loadAgentQueue() {
+  const metrics = document.getElementById('agentMetrics');
+  const queue = document.getElementById('agentQueue');
+  try {
+    const [summary, tasks] = await Promise.all([
+      api('/agent/summary'),
+      api('/agent/tasks?status=Awaiting%20Approval')
+    ]);
+    metrics.innerHTML = [
+      ['Awaiting', summary.awaiting_approval],
+      ['Completed', summary.completed],
+      ['Rejected', summary.rejected],
+      ['Failed', summary.failed]
+    ].map(([label,value]) => `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join('');
+
+    if (!tasks.length) {
+      queue.innerHTML = '<p style="color:var(--muted);font-size:12px">No actions awaiting approval.</p>';
+      return;
+    }
+    queue.innerHTML = tasks.map(task => `
+      <div class="task">
+        <h3>${esc(task.title)}</h3>
+        <p><strong>${esc(task.module)}</strong> · ${esc(task.action_type)} · ${esc(task.priority)}</p>
+        <p>${esc(task.description || '')}</p>
+        <div class="task-actions">
+          <button onclick="approveAgentTask(${task.id})">Approve & execute</button>
+          <button class="danger" onclick="rejectAgentTask(${task.id})">Reject</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    queue.innerHTML = `<pre>${esc(error.message)}</pre>`;
+  }
+}
+
+async function prepareAgentAction() {
+  const output = document.getElementById('agentOutput');
+  try {
+    const instruction = document.getElementById('agentInstruction').value.trim();
+    if (!instruction) throw new Error('Enter an instruction first.');
+    const data = await api('/agent/prepare', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        instruction,
+        organization_id:1,
+        priority:document.getElementById('agentPriority').value
+      })
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    document.getElementById('agentInstruction').value = '';
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function approveAgentTask(id) {
+  const output = document.getElementById('agentOutput');
+  try {
+    const data = await api(`/agent/tasks/${id}/approve`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({approved_by:'Founder'})
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadAgentQueue();
+    await loadSummary();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
+async function rejectAgentTask(id) {
+  const output = document.getElementById('agentOutput');
+  try {
+    const reason = window.prompt('Reason for rejection (optional):') || null;
+    const data = await api(`/agent/tasks/${id}/reject`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({reason})
+    });
+    output.textContent = JSON.stringify(data,null,2);
+    await loadAgentQueue();
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
 async function loadQueue() {
   const output = document.getElementById('waOutput');
   try { output.textContent = JSON.stringify(await api('/whatsapp/queue'),null,2); }
   catch (error) { output.textContent = error.message; }
 }
 
-loadHealth(); loadSummary();
+loadHealth(); loadSummary(); loadAgentQueue();
 </script>
 </body>
 </html>
